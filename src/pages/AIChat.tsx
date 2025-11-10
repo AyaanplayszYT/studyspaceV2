@@ -43,7 +43,7 @@ const AIChat = () => {
           'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_KEY}`,
         },
         body: JSON.stringify({
-          model: 'openai/gpt-3.5-turbo',
+          model: 'openai/gpt-4.5-preview',
           messages: [...messages, userMessage],
         }),
       });
