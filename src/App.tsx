@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,24 +18,6 @@ import NotFound from "./pages/NotFound";
 import AIChat from "./pages/AIChat";
 import AdminPanel from "./pages/Admin";
 import DMChat from "./pages/DMChat";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./components/AuthProvider";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { DashboardLayout } from "./components/DashboardLayout";
-import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
-import Notes from "./pages/Notes";
-import Tasks from "./pages/Tasks";
-import Chat from "./pages/Chat";
-import Leaderboard from "./pages/Leaderboard";
-import Inbox from "./pages/Inbox";
-import NotFound from "./pages/NotFound";
-import AIChat from "./pages/AIChat";
-import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
