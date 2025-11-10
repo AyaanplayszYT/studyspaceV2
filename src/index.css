@@ -1,0 +1,181 @@
+/* Themed button hover/active states for light/dark mode */
+.btn,
+button,
+input[type="button"],
+input[type="submit"] {
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.btn,
+button:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]) {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.btn-secondary {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+.btn-destructive {
+  background: hsl(var(--destructive));
+  color: hsl(var(--destructive-foreground));
+}
+.btn:hover,
+button:hover:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]) {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.btn:active,
+button:active:not([class*="outline"]):not([class*="ghost"]):not([class*="link"]) {
+  background: hsl(var(--primary));
+  filter: brightness(0.95);
+}
+.btn-secondary:hover {
+  background: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
+}
+.btn-destructive:hover {
+  background: hsl(var(--destructive));
+  filter: brightness(0.85);
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Light mode: calm yellow aesthetic */
+    --background: 50 100% 96%; /* soft yellow */
+    --foreground: 220 40% 15%;
+    --background-gradient: linear-gradient(120deg, #fffbe6 0%, #fff9d6 100%);
+
+    /* Card styling with gentle yellow */
+    --card: 50 100% 98%;
+    --card-foreground: 220 40% 15%;
+
+    --popover: 40 35% 95%;
+    --popover-foreground: 30 15% 15%;
+
+    /* Dark primary for buttons and key elements */
+  --primary: 220 90% 60%; /* blue */
+  --primary-foreground: 50 100% 98%;
+
+    /* Golden yellow accent */
+  --secondary: 50 100% 90%;
+  --secondary-foreground: 220 40% 15%;
+
+  --muted: 50 100% 94%;
+  --muted-foreground: 220 40% 40%;
+
+    /* Yellow accent for highlights */
+  --accent: 50 100% 80%;
+  --accent-foreground: 220 40% 15%;
+
+    --destructive: 0 70% 55%;
+    --destructive-foreground: 220 40% 98%;
+
+  --border: 50 100% 90%;
+  --input: 50 100% 98%;
+  --ring: 220 90% 60%;
+
+    --radius: 1rem;
+
+    /* Sidebar with warm tones */
+    --sidebar-background: 40 30% 93%;
+    --sidebar-foreground: 30 15% 20%;
+    --sidebar-primary: 30 10% 20%;
+    --sidebar-primary-foreground: 40 40% 97%;
+    --sidebar-accent: 45 90% 70%;
+    --sidebar-accent-foreground: 30 10% 20%;
+    --sidebar-border: 40 20% 85%;
+    --sidebar-ring: 45 95% 65%;
+
+    /* Custom colors for the app */
+    --warm-gradient: linear-gradient(120deg, #eaf0ff 0%, #c7d2fe 100%);
+    --card-shadow: 0 2px 8px -2px hsl(220 40% 60% / 0.08);
+    --card-shadow-hover: 0 4px 16px -4px hsl(220 40% 60% / 0.12);
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 240 100% 8%;
+    --foreground: 240 100% 98%;
+    --background-gradient: linear-gradient(120deg, #0a0a23 0%, #1a1a40 40%, #2d2d7a 100%);
+
+    --card: 240 100% 10%;
+    --card-foreground: 240 100% 98%;
+
+    --popover: 240 100% 10%;
+    --popover-foreground: 240 100% 98%;
+
+    --primary: 240 100% 60%;
+    --primary-foreground: 240 100% 98%;
+
+    --secondary: 240 100% 30%;
+    --secondary-foreground: 240 100% 98%;
+
+    --muted: 240 30% 20%;
+    --muted-foreground: 240 100% 80%;
+
+    --accent: 240 100% 60%;
+    --accent-foreground: 240 100% 98%;
+
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 240 100% 98%;
+
+    --border: 240 30% 20%;
+    --input: 240 30% 15%;
+    --ring: 240 100% 60%;
+
+    --sidebar-background: 240 100% 8%;
+    --sidebar-foreground: 240 100% 98%;
+    --sidebar-primary: 240 100% 60%;
+    --sidebar-primary-foreground: 240 100% 98%;
+    --sidebar-accent: 240 100% 60%;
+    --sidebar-accent-foreground: 240 100% 98%;
+    --sidebar-border: 240 30% 20%;
+    --sidebar-ring: 240 100% 60%;
+
+    --card-shadow: 0 2px 8px -2px hsl(240 100% 10% / 0.2);
+    --card-shadow-hover: 0 4px 16px -4px hsl(240 100% 10% / 0.3);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    transition-property: color, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    /* Light mode: background.png with a calm yellow overlay */
+    background:
+      linear-gradient(rgba(255, 249, 214, 0.7), rgba(255, 251, 230, 0.7)),
+      url('/src/background.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+
+  .dark body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    /* Dark mode: background.png with a 55% black overlay, no gradients */
+    background:
+      linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+      url('/src/background.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+  }
+  
+  html {
+    @apply scroll-smooth;
+  }
+}
