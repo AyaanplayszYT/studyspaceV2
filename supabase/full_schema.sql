@@ -1,3 +1,26 @@
+-- FUNCTION: get_dm_conversations (for DM list)
+create or replace function public.get_dm_conversations(user_id uuid)
+returns table (
+  id uuid,
+  username text,
+  email text
+)
+language sql
+as $$
+  select p.id, p.username, p.email
+  from public.profiles p
+  where p.id in (
+    select
+      case
+        when dm.from_user_id = user_id then dm.to_user_id
+        else dm.from_user_id
+      end as other_user_id
+    from public.direct_messages dm
+    where dm.from_user_id = user_id or dm.to_user_id = user_id
+    group by other_user_id
+  )
+  and p.id != user_id
+$$;
 -- PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
