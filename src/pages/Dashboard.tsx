@@ -112,7 +112,7 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Link
               to="/notes"
-              className="p-4 rounded-lg bg-card hover:bg-muted transition-smooth border border-border"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
               <h3 className="font-semibold mb-1">Share Notes</h3>
               <p className="text-sm text-muted-foreground">
@@ -121,7 +121,7 @@ const Dashboard = () => {
             </Link>
             <Link
               to="/tasks"
-              className="p-4 rounded-lg bg-card hover:bg-muted transition-smooth border border-border"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
               <h3 className="font-semibold mb-1">Create Task</h3>
               <p className="text-sm text-muted-foreground">
@@ -130,7 +130,7 @@ const Dashboard = () => {
             </Link>
             <Link
               to="/chat"
-              className="p-4 rounded-lg bg-card hover:bg-muted transition-smooth border border-border"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
               <h3 className="font-semibold mb-1">Join Chat</h3>
               <p className="text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ const Dashboard = () => {
             </Link>
             <Link
               to="/inbox"
-              className="p-4 rounded-lg bg-card hover:bg-muted transition-smooth border border-border"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
               <h3 className="font-semibold mb-1">Check Inbox</h3>
               <p className="text-sm text-muted-foreground">
@@ -148,7 +148,7 @@ const Dashboard = () => {
             </Link>
             <Link
               to="/admin"
-              className="p-4 rounded-lg bg-card hover:bg-muted transition-smooth border border-border"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
               <h3 className="font-semibold mb-1">Admin Panel</h3>
               <p className="text-sm text-muted-foreground">
@@ -157,7 +157,7 @@ const Dashboard = () => {
             </Link>
             <Link
               to="/ai-chat"
-              className="p-4 rounded-lg bg-card hover:bg-muted transition-smooth border border-border"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
               <h3 className="font-semibold mb-1">AI Chat</h3>
               <p className="text-sm text-muted-foreground">

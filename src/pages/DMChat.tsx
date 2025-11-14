@@ -29,6 +29,7 @@ export default function DMChat() {
   const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Fetch friend's profile
   useEffect(() => {
@@ -122,6 +123,7 @@ export default function DMChat() {
       if (error) throw error;
       setInput('');
       await fetchMessages();
+      textareaRef.current?.focus();
     } catch (error: any) {
       console.error('Error sending message:', error);
     } finally {
@@ -236,41 +238,39 @@ export default function DMChat() {
               </div>
             ) : (
               messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.from_user_id === user?.id ? 'justify-end' : 'justify-start'} group`}>
+                <div key={msg.id} className={`flex items-end gap-2 ${msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {msg.from_user_id === user?.id && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-6 w-6 p-0 flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Message</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this message? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="flex gap-2">
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className="bg-destructive hover:bg-destructive/90">
+                            Delete
+                          </AlertDialogAction>
+                        </div>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                   <div className={`max-w-[70%] rounded-lg p-3 ${msg.from_user_id === user?.id ? 'bg-blue-600 text-white' : 'bg-muted'}`}>
                     <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
-                    <div className="flex items-center justify-between gap-2 mt-1">
-                      <p className={`text-xs opacity-70 ${msg.from_user_id === user?.id ? 'text-blue-100' : ''}`}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                      {msg.from_user_id === user?.id && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Message</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete this message? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <div className="flex gap-2">
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className="bg-destructive hover:bg-destructive/90">
-                                Delete
-                              </AlertDialogAction>
-                            </div>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                    </div>
+                    <p className={`text-xs opacity-70 mt-1 ${msg.from_user_id === user?.id ? 'text-blue-100' : ''}`}>
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                 </div>
               ))
@@ -279,6 +279,7 @@ export default function DMChat() {
           </div>
           <form onSubmit={handleSend} className="flex gap-2 mt-auto pt-4 border-t">
             <textarea 
+              ref={textareaRef}
               value={input} 
               onChange={e => setInput(e.target.value)} 
               onKeyDown={(e) => {
