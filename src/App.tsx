@@ -18,10 +18,13 @@ import NotFound from "./pages/NotFound";
 import AIChat from "./pages/AIChat";
 import AdminPanel from "./pages/AdminPanel";
 import DMChat from "./pages/DMChat";
+import DMList from "./pages/DMList";
+import UserDiscovery from "./pages/UserDiscovery";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -110,12 +113,43 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dms"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <DMList />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dms/:userId"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <DMChat />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <UserDiscovery />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

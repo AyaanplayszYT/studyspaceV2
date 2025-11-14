@@ -6,6 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Send, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ChatMessage {
   id: string;
@@ -139,6 +149,23 @@ const Chat = () => {
     }
   };
 
+  const handleClearChat = async () => {
+    const { error } = await supabase.from('chat_messages').delete().gt('id', '0');
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to clear chat',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: 'Chat cleared successfully',
+      });
+      fetchMessages();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -147,8 +174,33 @@ const Chat = () => {
       </div>
 
       <Card className="shadow-card h-[600px] flex flex-col">
-        <CardHeader>
-          <CardTitle>Live Chat</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>General Chat</CardTitle>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear Chat
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear Chat</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete all messages in the general chat? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="flex gap-2">
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={handleClearChat}
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Clear
+                </AlertDialogAction>
+              </div>
+            </AlertDialogContent>
+          </AlertDialog>
         </CardHeader>
         <CardContent className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto space-y-4 mb-4">

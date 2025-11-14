@@ -1,4 +1,4 @@
-import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox, LogOut } from 'lucide-react';
+import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox, LogOut, Users } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
@@ -20,6 +20,8 @@ const items = [
   { title: 'Notes', url: '/notes', icon: FileText },
   { title: 'Tasks', url: '/tasks', icon: CheckSquare },
   { title: 'Chat', url: '/chat', icon: MessageCircle },
+  { title: 'Direct Messages', url: '/dms', icon: MessageCircle },
+  { title: 'Find Users', url: '/users', icon: Users },
   { title: 'Leaderboard', url: '/leaderboard', icon: Trophy },
   { title: 'Inbox', url: '/inbox', icon: Inbox },
 ];

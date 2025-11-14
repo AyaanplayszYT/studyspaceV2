@@ -152,7 +152,6 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
     min-height: 100vh;
     /* Light mode: background.png with a calm yellow overlay */
     background:
@@ -161,18 +160,19 @@ All colors MUST be HSL.
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    color: hsl(var(--foreground));
   }
 
   .dark body {
-    @apply bg-background text-foreground;
     min-height: 100vh;
-    /* Dark mode: background.png with a 55% black overlay, no gradients */
+    /* Dark mode: background.png with a 20% black overlay for more visibility */
     background:
-      linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+      linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)),
       url('/src/background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
+    color: hsl(var(--foreground));
   }
   
   html {

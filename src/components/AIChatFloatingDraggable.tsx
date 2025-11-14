@@ -9,10 +9,18 @@ import { MessageCircle } from 'lucide-react';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
+const GREETINGS = [
+  'Hi there! I\'m your AI study buddy. Ready to help with anything?',
+  'Welcome to your AI assistant! Ask me anything about your studies.',
+  'Hey! I\'m here to help you learn and stay organized. What do you need?'
+];
+
+let greetingIndex = 0;
+
 export function AIChatFloatingDraggable() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hello! I am AI Assistant. I can access your notes, tasks, and search the web. How can I help you today?' }
+    { role: 'assistant', content: GREETINGS[greetingIndex++ % GREETINGS.length] }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

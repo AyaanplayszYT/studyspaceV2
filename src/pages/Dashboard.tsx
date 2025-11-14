@@ -3,8 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { Flame, Trophy, Target, TrendingUp } from 'lucide-react';
+import { Flame, Trophy, Target, TrendingUp, LogOut } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 interface ProfileData {
   username: string;
@@ -14,7 +15,7 @@ interface ProfileData {
 }
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,11 +53,17 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-4xl font-bold mb-2">
-          Welcome back, <span className="text-accent">{profile?.username || 'Student'}</span>
-        </h1>
-        <p className="text-muted-foreground">Ready to crush your study goals today?</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">
+            Welcome back, <span className="text-accent">{profile?.username || 'Student'}</span>
+          </h1>
+          <p className="text-muted-foreground">Ready to crush your study goals today?</p>
+        </div>
+        <Button onClick={signOut} variant="outline" size="sm">
+          <LogOut className="h-4 w-4 mr-2" />
+          Sign Out
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
