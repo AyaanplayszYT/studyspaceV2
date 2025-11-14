@@ -229,7 +229,7 @@ export default function DMChat() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col min-h-[500px] flex-1">
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 py-4">
+          <div className="flex-1 overflow-y-auto space-y-4 mb-4 py-4 min-h-0">
             {messages.length === 0 ? (
               <div className="flex justify-center items-center h-full text-muted-foreground">
                 <p>No messages yet. Say hi! 👋</p>
@@ -238,7 +238,7 @@ export default function DMChat() {
               messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.from_user_id === user?.id ? 'justify-end' : 'justify-start'} group`}>
                   <div className={`max-w-[70%] rounded-lg p-3 ${msg.from_user_id === user?.id ? 'bg-blue-600 text-white' : 'bg-muted'}`}>
-                    <p className="text-sm break-words">{msg.content}</p>
+                    <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
                     <div className="flex items-center justify-between gap-2 mt-1">
                       <p className={`text-xs opacity-70 ${msg.from_user_id === user?.id ? 'text-blue-100' : ''}`}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -278,18 +278,26 @@ export default function DMChat() {
             <div ref={messagesEndRef} />
           </div>
           <form onSubmit={handleSend} className="flex gap-2 mt-auto pt-4 border-t">
-            <Input 
+            <textarea 
               value={input} 
               onChange={e => setInput(e.target.value)} 
-              placeholder="Type a message..." 
-              className="flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend(e as any);
+                }
+              }}
+              placeholder="Type a message... (Shift+Enter for new line)" 
+              className="flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm resize-none max-h-24 focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={sending}
               autoFocus
+              rows={3}
             />
             <Button 
               type="submit" 
               disabled={!input.trim() || sending}
               size="icon"
+              className="flex-shrink-0"
             >
               <Send className="h-4 w-4" />
             </Button>

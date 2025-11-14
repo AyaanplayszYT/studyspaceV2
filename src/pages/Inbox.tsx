@@ -82,6 +82,9 @@ export default function Inbox() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 350);
   const [activeTab, setActiveTab] = useState<'discover' | 'pending' | 'friends' | 'messages'>('messages');
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // dialogs
   const [confirmDialog, setConfirmDialog] = useState<null | { title: string; description: string; onConfirm: () => void }>(null);
@@ -353,7 +356,7 @@ export default function Inbox() {
 
   // Main layout
   return (
-    <div className="">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Animated background */}
       <div className="">
         <div className="" />
@@ -361,7 +364,7 @@ export default function Inbox() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 px-6 py-4">
+      <div className="relative z-10 px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-white">Messages</h1>
@@ -381,11 +384,11 @@ export default function Inbox() {
       </div>
 
       {/* Main content area */}
-      <div className="relative z-10 flex-1 flex gap-4 px-6 pb-6 overflow-hidden">
+      <div className="relative z-10 flex-1 flex gap-4 px-6 pb-6 overflow-hidden min-h-0">
         {/* Left sidebar */}
-        <div className="w-80 flex flex-col gap-3">
+        <div className="w-80 flex flex-col gap-3 min-h-0">
           {/* Search and tabs */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 space-y-3">
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 space-y-3 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <Input
@@ -418,150 +421,163 @@ export default function Inbox() {
           </div>
 
           {/* List area - scrollable */}
-          <div className="flex-1 space-y-2 overflow-y-auto pr-2">
-            {activeTab === 'messages' &&
-              (messages.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
-                  <Mail className="w-8 h-8 text-white/40 mx-auto mb-2" />
-                  <h3 className="font-semibold text-white mb-1">No conversations</h3>
-                  <p className="text-sm text-white/60">Start by discovering or adding friends</p>
-                </div>
-              ) : (
-                messages.map((m) => {
-                  const sender = friends.find((f) => f.id === m.from_user_id) || allUsers.find((u) => u.id === m.from_user_id) || { username: 'Unknown', id: m.from_user_id };
-                  const isSelected = selectedFriend?.id === m.from_user_id;
-                  return (
+          <div className="flex-1 overflow-y-auto pr-2 min-h-0">
+            <div className="space-y-2">
+              {activeTab === 'messages' &&
+                (messages.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
+                    <Mail className="w-8 h-8 text-white/40 mx-auto mb-2" />
+                    <h3 className="font-semibold text-white mb-1">No conversations</h3>
+                    <p className="text-sm text-white/60">Start by discovering or adding friends</p>
+                  </div>
+                ) : (
+                  (() => {
+                    // Group messages by sender and show latest message per sender
+                    const messageGroups = new Map<string, Message>();
+                    messages.forEach((m) => {
+                      if (!messageGroups.has(m.from_user_id) || new Date(m.created_at) > new Date(messageGroups.get(m.from_user_id)!.created_at)) {
+                        messageGroups.set(m.from_user_id, m);
+                      }
+                    });
+                    return Array.from(messageGroups.values()).map((m) => {
+                      const sender = friends.find((f) => f.id === m.from_user_id) || allUsers.find((u) => u.id === m.from_user_id) || { username: 'Unknown', id: m.from_user_id };
+                      const isSelected = selectedFriend?.id === m.from_user_id;
+                      return (
+                        <button
+                          key={m.id}
+                          onClick={() => {
+                            setSelectedFriend({ id: sender.id, username: sender.username } as Profile);
+                            fetchChatMessages(sender.id);
+                            // Remove this message from the list
+                            setMessages((prevMessages) => prevMessages.filter((msg) => msg.id !== m.id));
+                          }}
+                          className={`w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 text-left transition-all ${
+                            isSelected ? 'border-blue-400/50 bg-blue-500/10' : 'hover:bg-white/10'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="font-medium text-sm text-white truncate">{sender.username}</p>
+                            <span className="text-xs text-white/50 whitespace-nowrap">{new Date(m.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-xs text-white/60 line-clamp-2">{sender.username} sent a message when you were away</p>
+                        </button>
+                      );
+                    });
+                  })()
+                ))}
+
+              {activeTab === 'friends' &&
+                (friends.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
+                    <Users className="w-8 h-8 text-white/40 mx-auto mb-2" />
+                    <h3 className="font-semibold text-white mb-1">No friends</h3>
+                    <p className="text-sm text-white/60">Add friends to get started</p>
+                  </div>
+                ) : (
+                  friends.map((f) => (
                     <button
-                      key={m.id}
+                      key={f.id}
                       onClick={() => {
-                        setSelectedFriend({ id: sender.id, username: sender.username } as Profile);
-                        fetchChatMessages(sender.id);
+                        setSelectedFriend(f);
+                        fetchChatMessages(f.id);
                       }}
                       className={`w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 text-left transition-all ${
-                        isSelected ? 'border-blue-400/50 bg-blue-500/10' : 'hover:bg-white/10'
+                        selectedFriend?.id === f.id ? 'border-blue-400/50 bg-blue-500/10' : 'hover:bg-white/10'
                       }`}
                     >
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="font-medium text-sm text-white truncate">{sender.username}</p>
-                        <span className="text-xs text-white/50 whitespace-nowrap">{new Date(m.created_at).toLocaleDateString()}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm text-white truncate">{f.username}</span>
+                        <MessageSquare className="w-4 h-4 flex-shrink-0 text-white/50" />
                       </div>
-                      <p className="text-xs text-white/60 line-clamp-2">{m.content}</p>
                     </button>
-                  );
-                })
-              ))}
+                  ))
+                ))}
 
-            {activeTab === 'friends' &&
-              (friends.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
-                  <Users className="w-8 h-8 text-white/40 mx-auto mb-2" />
-                  <h3 className="font-semibold text-white mb-1">No friends</h3>
-                  <p className="text-sm text-white/60">Add friends to get started</p>
-                </div>
-              ) : (
-                friends.map((f) => (
-                  <button
-                    key={f.id}
-                    onClick={() => {
-                      setSelectedFriend(f);
-                      fetchChatMessages(f.id);
-                    }}
-                    className={`w-full rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 text-left transition-all ${
-                      selectedFriend?.id === f.id ? 'border-blue-400/50 bg-blue-500/10' : 'hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm text-white truncate">{f.username}</span>
-                      <MessageSquare className="w-4 h-4 flex-shrink-0 text-white/50" />
-                    </div>
-                  </button>
-                ))
-              ))}
+              {activeTab === 'pending' &&
+                (friendRequests.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
+                    <Mail className="w-8 h-8 text-white/40 mx-auto mb-2" />
+                    <h3 className="font-semibold text-white mb-1">No requests</h3>
+                    <p className="text-sm text-white/60">No friend requests at the moment</p>
+                  </div>
+                ) : (
+                  friendRequests.map((r) => {
+                    const requester = allUsers.find((u) => u.id === r.user_id) || { username: 'Unknown' };
+                    return (
+                      <div key={r.id} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 space-y-2">
+                        <div>
+                          <p className="font-medium text-sm text-white">{requester.username}</p>
+                          <p className="text-xs text-white/60">sent a friend request</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleAcceptRequest(r.id)}
+                          >
+                            <Check className="w-3 h-3 mr-1" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-white/20 text-white hover:bg-white/10"
+                            onClick={() => handleDeclineRequest(r.id)}
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })
+                ))}
 
-            {activeTab === 'pending' &&
-              (friendRequests.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
-                  <Mail className="w-8 h-8 text-white/40 mx-auto mb-2" />
-                  <h3 className="font-semibold text-white mb-1">No requests</h3>
-                  <p className="text-sm text-white/60">No friend requests at the moment</p>
-                </div>
-              ) : (
-                friendRequests.map((r) => {
-                  const requester = allUsers.find((u) => u.id === r.user_id) || { username: 'Unknown' };
-                  return (
-                    <div key={r.id} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 space-y-2">
+              {activeTab === 'discover' &&
+                (discoverList.length === 0 ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
+                    <Search className="w-8 h-8 text-white/40 mx-auto mb-2" />
+                    <h3 className="font-semibold text-white mb-1">No users found</h3>
+                    <p className="text-sm text-white/60">{searchQuery ? 'Try a different search' : 'Start discovering people'}</p>
+                  </div>
+                ) : (
+                  discoverList.map((u) => (
+                    <div key={u.id} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 space-y-2">
                       <div>
-                        <p className="font-medium text-sm text-white">{requester.username}</p>
-                        <p className="text-xs text-white/60">sent a friend request</p>
+                        <p className="font-medium text-sm text-white">{u.username}</p>
+                        <p className="text-xs text-white/60">{u.id === user?.id ? 'You' : 'User'}</p>
                       </div>
                       <div className="flex gap-2">
                         <Button
                           size="sm"
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => handleAcceptRequest(r.id)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                          onClick={() => {
+                            setSelectedFriend({ id: u.id, username: u.username });
+                            fetchChatMessages(u.id);
+                            setActiveTab('messages');
+                          }}
                         >
-                          <Check className="w-3 h-3 mr-1" />
-                          Accept
+                          <MessageSquare className="w-3 h-3 mr-1" />
+                          Chat
                         </Button>
                         <Button
                           size="sm"
                           variant="outline"
                           className="border-white/20 text-white hover:bg-white/10"
-                          onClick={() => handleDeclineRequest(r.id)}
+                          onClick={() => handleSendFriendRequest(u.id)}
+                          disabled={u.id === user?.id}
                         >
-                          <X className="w-3 h-3" />
+                          <UserPlus className="w-3 h-3" />
                         </Button>
                       </div>
                     </div>
-                  );
-                })
-              ))}
-
-            {activeTab === 'discover' &&
-              (discoverList.length === 0 ? (
-                <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
-                  <Search className="w-8 h-8 text-white/40 mx-auto mb-2" />
-                  <h3 className="font-semibold text-white mb-1">No users found</h3>
-                  <p className="text-sm text-white/60">{searchQuery ? 'Try a different search' : 'Start discovering people'}</p>
-                </div>
-              ) : (
-                discoverList.map((u) => (
-                  <div key={u.id} className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 space-y-2">
-                    <div>
-                      <p className="font-medium text-sm text-white">{u.username}</p>
-                      <p className="text-xs text-white/60">{u.id === user?.id ? 'You' : 'User'}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        onClick={() => {
-                          setSelectedFriend({ id: u.id, username: u.username });
-                          fetchChatMessages(u.id);
-                          setActiveTab('messages');
-                        }}
-                      >
-                        <MessageSquare className="w-3 h-3 mr-1" />
-                        Chat
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-white/20 text-white hover:bg-white/10"
-                        onClick={() => handleSendFriendRequest(u.id)}
-                        disabled={u.id === user?.id}
-                      >
-                        <UserPlus className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              ))}
+                  ))
+                ))}
+            </div>
           </div>
         </div>
 
         {/* Right side - Chat */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
           {!selectedFriend ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 text-center max-w-md">
@@ -575,7 +591,7 @@ export default function Inbox() {
           ) : (
             <>
               {/* Chat header */}
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Button variant="ghost" size="icon" onClick={() => { setSelectedFriend(null); setChatMessages([]); }}>
@@ -593,8 +609,8 @@ export default function Inbox() {
               </div>
 
               {/* Messages area */}
-              <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden flex flex-col">
-                <div className="flex-1 overflow-y-auto py-4 px-4 space-y-4" ref={chatScrollRef}>
+              <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto py-4 px-4 space-y-4 min-h-0" ref={chatScrollRef}>
                   {chatMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-center">
                       <div>
@@ -615,7 +631,7 @@ export default function Inbox() {
                                   : 'bg-white/10 text-white rounded-bl-none border border-white/20'
                               }`}
                             >
-                              <p className="text-sm break-words">{msg.content}</p>
+                              <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
                             </div>
                             <div className={`text-xs text-white/50 ${isMine ? 'text-right' : 'text-left'} px-1`}>
                               {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -635,25 +651,53 @@ export default function Inbox() {
                       );
                     })
                   )}
+                  {typingUsers.size > 0 && (
+                    <div className="flex justify-start">
+                      <div className="flex flex-col max-w-xs gap-1">
+                        <div className="px-4 py-2 rounded-xl bg-white/10 text-white rounded-bl-none border border-white/20">
+                          <div className="flex items-center gap-1">
+                            <span className="text-sm">{Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing</span>
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                              <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                              <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Input area */}
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex-shrink-0">
                 <div className="flex gap-2">
-                  <Input
-                    placeholder="Type a message..."
+                  <textarea
+                    placeholder="Type a message... (Shift+Enter for new line)"
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      // Show typing indicator
+                      setIsTyping(true);
+                      if (typingTimeoutRef.current) {
+                        clearTimeout(typingTimeoutRef.current);
+                      }
+                      typingTimeoutRef.current = setTimeout(() => {
+                        setIsTyping(false);
+                      }, 3000);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
+                        setIsTyping(false);
                       }
                     }}
-                    className="flex-1 bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                    className="flex-1 bg-white/10 border border-white/20 text-white placeholder:text-white/40 rounded-lg p-2 resize-none max-h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={3}
                   />
-                  <Button onClick={handleSendMessage} size="icon" disabled={!newMessage.trim()}>
+                  <Button onClick={handleSendMessage} size="icon" disabled={!newMessage.trim()} className="flex-shrink-0">
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>

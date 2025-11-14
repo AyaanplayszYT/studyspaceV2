@@ -1,6 +1,5 @@
 
 # StudySpaceV2
-Still working on this project..
 
 **StudySpaceV2** is an upgraded all-in-one productivity and social platform for students.  
 It combines AI-powered tools, real-time communication, and gamified learning to make studying fun and interactive.

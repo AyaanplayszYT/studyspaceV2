@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, FileText, Trash2 } from 'lucide-react';
+import { Plus, FileText, Trash2, Bold, Italic, Underline, List } from 'lucide-react';
   const handleDeleteNote = async (id: string) => {
     const { error } = await supabase.from('notes').delete().eq('id', id);
     if (error) {
@@ -48,6 +48,17 @@ const Notes = () => {
   const [subject, setSubject] = useState('');
   const [isPublic, setIsPublic] = useState(true);
   const { toast } = useToast();
+  const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Formatting functions
+  const insertFormatting = (before: string, after: string = '') => {
+    if (!contentRef.current) return;
+    const start = contentRef.current.selectionStart;
+    const end = contentRef.current.selectionEnd;
+    const selectedText = content.substring(start, end) || 'text';
+    const newContent = content.substring(0, start) + before + selectedText + after + content.substring(end);
+    setContent(newContent);
+  };
 
   useEffect(() => {
     fetchNotes();
@@ -136,12 +147,37 @@ const Notes = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="content">Content</Label>
+                <div className="flex gap-1 mb-2 flex-wrap">
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('**', '**')} title="Bold">
+                    <Bold className="w-4 h-4" />
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('*', '*')} title="Italic">
+                    <Italic className="w-4 h-4" />
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('__', '__')} title="Underline">
+                    <Underline className="w-4 h-4" />
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('- ', '')} title="List">
+                    <List className="w-4 h-4" />
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('# ', '')} title="Heading">
+                    H1
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('## ', '')} title="Subheading">
+                    H2
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => insertFormatting('`', '`')} title="Code">
+                    &lt;/&gt;
+                  </Button>
+                </div>
                 <Textarea
+                  ref={contentRef}
                   id="content"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
                   rows={6}
                   required
+                  placeholder="Use formatting buttons above or type markdown..."
                 />
               </div>
               <div className="flex items-center space-x-2">

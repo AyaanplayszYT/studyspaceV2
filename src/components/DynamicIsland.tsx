@@ -1,7 +1,7 @@
 import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
-import { ThemeToggle } from './ThemeToggle';
+import { ChangelogDialog } from './ChangelogDialog';
 
 const items = [
   { title: 'Dashboard', url: '/', icon: Home },
@@ -37,7 +37,7 @@ export function DynamicIsland() {
         
         <div className="h-6 w-px bg-border mx-1" />
         
-        <ThemeToggle />
+        <ChangelogDialog />
       </div>
     </div>
   );

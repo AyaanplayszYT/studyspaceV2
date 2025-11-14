@@ -2,10 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { X, Send, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { MessageCircle } from 'lucide-react';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -27,7 +25,7 @@ export function AIChatFloatingDraggable() {
   const [lastSent, setLastSent] = useState<number>(0);
   const { toast } = useToast();
   const messagesEndRef = useRef(null);
-  const [position, setPosition] = useState({ x: 40, y: 40 });
+  const [position, setPosition] = useState({ x: window.innerWidth - 400, y: 40 });
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
@@ -123,133 +121,103 @@ export function AIChatFloatingDraggable() {
       <Button
         variant="secondary"
         size="icon"
-        className="fixed top-4 right-4 z-50 shadow-lg"
+        className="fixed top-6 right-6 z-40 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
         aria-label="Open AI Assistant"
         onClick={() => setOpen(true)}
         style={{ display: open ? 'none' : 'inline-flex' }}
       >
-        <MessageCircle className="h-6 w-6" />
+        <Sparkles className="w-5 h-5" />
       </Button>
       {open && (
         <div
-          className={`fixed z-50 flex flex-col transition-colors duration-300 ${typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? 'dark' : ''}`}
+          className="fixed z-50 flex flex-col rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden shadow-2xl"
           style={{
-            left: position.x,
-            top: position.y,
+            left: `${position.x}px`,
+            top: `${position.y}px`,
             width: 360,
-            minHeight: 440,
-            maxWidth: 420,
-            borderRadius: '1.25rem',
-            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.25)',
-            background: typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-              ? 'rgba(20,22,40,0.92)'
-              : 'rgba(255,255,255,0.85)',
-            backdropFilter: 'blur(16px) saturate(180%)',
-            border: typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-              ? '1.5px solid rgba(80,80,120,0.25)'
-              : '1.5px solid rgba(200,200,255,0.18)',
-            transition: 'box-shadow 0.2s',
+            height: 500,
+            maxWidth: 'calc(100vw - 20px)',
           }}
         >
+          {/* Header */}
           <div
-            className="flex items-center justify-between px-4 py-2 cursor-move select-none"
-            style={{
-              background: typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                ? 'rgba(30,32,60,0.95)'
-                : 'rgba(245,245,255,0.85)',
-              borderTopLeftRadius: '1.25rem',
-              borderTopRightRadius: '1.25rem',
-              borderBottom: typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
-                ? '1px solid rgba(80,80,120,0.18)'
-                : '1px solid rgba(200,200,255,0.18)',
-              userSelect: 'none',
-              fontWeight: 600,
-              fontSize: '1.08rem',
-            }}
+            className="flex items-center justify-between px-4 py-3 cursor-move select-none border-b border-white/10 flex-shrink-0 bg-white/5"
             onMouseDown={onMouseDown}
           >
-            <div className="flex items-center gap-2">
-              <img src="/src/gpt.png" alt="AI" className="h-8 w-8 rounded-full border-2 border-accent object-cover bg-white" style={{boxShadow:'0 1px 4px 0 rgba(0,0,0,0.10)'}} />
-              <span className="font-semibold text-base" style={{lineHeight:'2.5rem'}}>AI Assistant</span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
+              <span className="font-semibold text-white text-sm">AI Study Assistant</span>
             </div>
-            <Button size="icon" variant="ghost" onClick={() => setOpen(false)} className="hover:bg-red-100">
-              <span className="text-2xl leading-none">×</span>
+            <Button 
+              size="icon" 
+              variant="ghost" 
+              onClick={() => setOpen(false)} 
+              className="hover:bg-white/10 text-white/70 hover:text-white"
+            >
+              <X className="w-4 h-4" />
             </Button>
           </div>
-          <Card className="flex-1 flex flex-col shadow-none border-none bg-transparent min-h-0">
-            <CardContent className="flex-1 flex flex-col min-h-0 px-0 pt-2 pb-0">
-              <div className="flex-1 min-h-0 max-h-[60vh] overflow-y-auto space-y-4 mb-4 px-3">
-                {messages.map((msg, i) => {
-                  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
-                  const userBg = isDark ? 'bg-accent text-accent-foreground' : 'bg-accent text-accent-foreground';
-                  const aiBg = isDark ? 'bg-[#23243a] text-white' : 'bg-white text-black';
-                  return (
-                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div
-                        className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm transition-all ${msg.role === 'user' ? userBg : aiBg}`}
-                        style={{
-                          borderTopLeftRadius: msg.role === 'user' ? 18 : 8,
-                          borderTopRightRadius: msg.role === 'user' ? 8 : 18,
-                          borderBottomLeftRadius: msg.role === 'user' ? 18 : 8,
-                          borderBottomRightRadius: msg.role === 'user' ? 8 : 18,
-                          marginBottom: 2,
-                          fontSize: '1rem',
-                          boxShadow: msg.role === 'user' ? '0 1px 4px 0 rgba(220,220,255,0.10)' : '0 1px 4px 0 rgba(0,0,0,0.10)',
-                          border: msg.role === 'user'
-                            ? (isDark ? '1px solid rgba(80,80,120,0.18)' : '1px solid rgba(220,220,255,0.18)')
-                            : (isDark ? '1px solid rgba(80,80,120,0.18)' : '1px solid rgba(220,220,255,0.18)'),
-                        }}
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          {msg.role !== 'user' && (
-                            <img
-                              src="/src/gpt.png"
-                              alt="AI"
-                              className="h-5 w-5 rounded-full border border-border"
-                            />
-                          )}
-                          <p className="font-semibold text-sm">
-                            {msg.role === 'user' ? 'You' : 'AI Assistant'}
-                          </p>
-                        </div>
-                        <div className="text-sm whitespace-pre-line markdown-body">
-                          <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{msg.content}</ReactMarkdown>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={messagesEndRef} />
-              </div>
-              <form onSubmit={handleSend} className="flex gap-2 pb-2 px-3 items-center">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about notes or tasks..."
-                  className="flex-1 rounded-full border border-border focus:ring-2 focus:ring-accent focus:border-accent px-4 py-2 text-base shadow-sm bg-white dark:bg-[#23243a] dark:text-white"
-                  style={{
-                    fontSize: '1rem',
-                    background: typeof window !== 'undefined' && document.documentElement.classList.contains('dark') ? '#23243a' : 'rgba(255,255,255,0.95)',
-                    borderRadius: 9999,
-                  }}
-                  disabled={loading}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={loading || !input.trim()}
-                  className="rounded-full bg-accent text-accent-foreground hover:bg-accent/80 shadow-sm transition-all flex items-center justify-center"
-                  style={{ minWidth: 44, minHeight: 44, padding: 0 }}
+
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto space-y-3 p-4 min-h-0">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                    msg.role === 'user'
+                      ? 'bg-blue-600 text-white rounded-br-none'
+                      : 'bg-white/10 text-white rounded-bl-none border border-white/20'
+                  }`}
                 >
-                  {loading ? (
-                    <span className="animate-spin">...</span>
-                  ) : (
-                    <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+                  <div className="text-sm whitespace-pre-wrap break-words markdown-body">
+                    <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{msg.content}</ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-white/10 text-white rounded-2xl rounded-bl-none border border-white/20 px-4 py-2">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Input Area */}
+          <div className="border-t border-white/10 p-3 flex-shrink-0 bg-white/5">
+            <form onSubmit={handleSend} className="flex gap-2">
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(e as any);
+                  }
+                }}
+                placeholder="Ask me anything... (Shift+Enter for new line)"
+                className="flex-1 bg-white/10 border border-white/20 text-white placeholder:text-white/40 rounded-lg p-2 resize-none max-h-20 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                rows={2}
+                disabled={loading}
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={loading || !input.trim()}
+                className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </form>
+          </div>
         </div>
       )}
     </>
