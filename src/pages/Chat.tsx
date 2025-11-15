@@ -27,12 +27,12 @@ const Chat = () => {
   const [chatLocked, setChatLocked] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(true);
 
-  // Fetch general_chat_locked setting
+  // Fetch chat_locked setting
   useEffect(() => {
     const fetchSettings = async () => {
       setSettingsLoading(true);
-      const { data } = await (supabase as any).from('settings').select('general_chat_locked').single();
-      setChatLocked(!!data?.general_chat_locked);
+      const { data } = await (supabase as any).from('settings').select('chat_locked').single();
+      setChatLocked(!!data?.chat_locked);
       setSettingsLoading(false);
     };
     fetchSettings();
@@ -48,7 +48,7 @@ const Chat = () => {
           table: 'settings',
         },
         (payload) => {
-          const newLocked = payload.new?.general_chat_locked;
+          const newLocked = payload.new?.chat_locked;
           setChatLocked(!!newLocked);
         }
       )
@@ -108,6 +108,15 @@ const Chat = () => {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
+
+    if (chatLocked) {
+      toast({
+        title: 'Chat Locked',
+        description: 'General chat is currently locked by an admin',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const { error } = await supabase.from('chat_messages').insert({
       user_id: user?.id,

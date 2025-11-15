@@ -100,21 +100,44 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_OPENROUTER_KEY=your_openrouter_api_key
 ```
 
-### 4. Start the development server
+### 4. Set up the database
+- This project uses **Supabase** for authentication, database, and real-time features
+- Run the SQL in `supabase/full_schema.sql` on your Supabase project
+- Tables included: profiles, friendships, direct_messages, notes, tasks, settings
+- Real-time subscriptions enabled for instant updates
+
+### 5. Make yourself admin
+After running the schema SQL and creating an account:
+1. Go to your Supabase dashboard
+2. Open the SQL Editor
+3. Run this query to make yourself admin:
+
+```sql
+UPDATE public.profiles SET is_admin = true WHERE id = 'your-user-id';
+```
+
+Replace `'your-user-id'` with your actual user ID from the `profiles` table.
+
+
+### SIMPLER WAY 
+ 1. HEAD OVER TO TABLES > PROFILES > is_admin 
+ 2. Click on your row and then edit table.
+ 3. set as TRUE
+![alt text](image.png)
+
+4. You can now access the Admin Panel at `/admin` to:
+   - Lock/unlock Notes (only admins can post when locked)
+   - Lock/unlock AI Chat (only admins can use when locked)
+   - Lock/unlock General Chat (all users locked out when enabled)
+   - Lock/unlock Tasks (only admins can create when locked)
+   - Manage other admin users (add/remove by email)
+
+### 6. Start the development server
 ```bash
 npm run dev
 ```
 
 The app will be available at `http://localhost:5173`
-
----
-
-## Database Setup
-
-- This project uses **Supabase** for authentication, database, and real-time features
-- Run the SQL in `supabase/full_schema.sql` on your Supabase project
-- Tables included: profiles, friendships, direct_messages, notes, tasks
-- Real-time subscriptions enabled for instant updates
 
 ---
 
@@ -135,7 +158,7 @@ The app will be available at `http://localhost:5173`
 
 - AI rate-limited to 1 message per 3 seconds
 - Messages stored per conversation (not globally archived)
-- Admin panel features still in development
+- Admin features require direct database access to grant initial admin role
 
 ---
 
@@ -152,5 +175,5 @@ MIT
 ---
 
 **Last Updated:** November 15, 2025  
-**Version:** 2.0.0  
+**Version:** 2.1.0  
 **Status:** Active Development

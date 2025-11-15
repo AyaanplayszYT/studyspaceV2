@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   points INTEGER DEFAULT 0 NOT NULL,
   rank INTEGER DEFAULT 0 NOT NULL,
   is_public BOOLEAN DEFAULT true NOT NULL,
+  is_admin BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
@@ -241,3 +242,33 @@ as $$
   )
   and p.id != user_id
 $$;
+
+-- SETTINGS TABLE (For admin controls)
+CREATE TABLE IF NOT EXISTS public.settings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  notes_locked BOOLEAN DEFAULT false NOT NULL,
+  ai_locked BOOLEAN DEFAULT false NOT NULL,
+  chat_locked BOOLEAN DEFAULT false NOT NULL,
+  tasks_locked BOOLEAN DEFAULT false NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view settings"
+  ON public.settings FOR SELECT
+  USING (true);
+
+CREATE POLICY "Only admins can update settings"
+  ON public.settings FOR UPDATE
+  USING (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE is_admin = true
+    )
+  );
+
+-- Insert default settings
+INSERT INTO public.settings (notes_locked, ai_locked, chat_locked, tasks_locked)
+VALUES (false, false, false, false)
+ON CONFLICT DO NOTHING;

@@ -3,19 +3,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/integrations/supabase/client';
 import { Send } from 'lucide-react';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const RATE_LIMIT_MS = 3000; // 3 seconds between messages
 
 const AIChat = () => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [lastSent, setLastSent] = useState<number>(0);
   const [cooldownSeconds, setCooldownSeconds] = useState(0);
+  const [aiLocked, setAiLocked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Check if AI is locked and if user is admin
+  useEffect(() => {
+    const checkSettings = async () => {
+      const { data: settings } = await supabase.from('settings').select('ai_locked').single() as any;
+      if (settings) setAiLocked(settings.ai_locked);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user?.id)
+        .single() as any;
+      if (profile) setIsAdmin(profile.is_admin);
+    };
+
+    checkSettings();
+  }, [user]);
 
   useEffect(() => {
     if (cooldownSeconds <= 0) return;
@@ -70,6 +92,17 @@ const AIChat = () => {
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
+
+    // Check if AI is locked
+    if (aiLocked && !isAdmin) {
+      toast({
+        title: 'AI Locked',
+        description: 'Only admins can use AI chat at this time.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const now = Date.now();
     if (now - lastSent < RATE_LIMIT_MS) {
       const remainingSeconds = Math.ceil((RATE_LIMIT_MS - (now - lastSent)) / 1000);
@@ -156,14 +189,14 @@ const AIChat = () => {
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything..."
+              placeholder={aiLocked && !isAdmin ? "AI is locked" : "Ask anything..."}
               className="flex-1 text-sm md:text-base"
-              disabled={loading}
+              disabled={loading || (aiLocked && !isAdmin)}
             />
             <Button
               type="submit"
               size="sm"
-              disabled={loading || !input.trim() || cooldownSeconds > 0}
+              disabled={loading || !input.trim() || cooldownSeconds > 0 || (aiLocked && !isAdmin)}
               className="px-3 md:px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all shadow-sm whitespace-nowrap"
             >
               {cooldownSeconds > 0 ? (

@@ -104,6 +104,7 @@ interface Note {
 
 const Notes = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
   const [open, setOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -111,8 +112,26 @@ const Notes = () => {
   const [content, setContent] = useState('');
   const [subject, setSubject] = useState('');
   const [isPublic, setIsPublic] = useState(true);
-  const { toast } = useToast();
+  const [notesLocked, setNotesLocked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check if notes are locked and if user is admin
+  useEffect(() => {
+    const checkSettings = async () => {
+      const { data: settings } = await supabase.from('settings').select('notes_locked').single() as any;
+      if (settings) setNotesLocked(settings.notes_locked);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user?.id)
+        .single() as any;
+      if (profile) setIsAdmin(profile.is_admin);
+    };
+
+    checkSettings();
+  }, [user]);
 
   // Formatting functions
   const insertFormatting = (before: string, after: string = '') => {
@@ -144,6 +163,16 @@ const Notes = () => {
 
   const handleCreateNote = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if notes are locked
+    if (notesLocked && !isAdmin) {
+      toast({
+        title: 'Notes Locked',
+        description: 'Only admins can create notes at this time.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const { error } = await supabase.from('notes').insert({
       user_id: user?.id,
@@ -182,7 +211,7 @@ const Notes = () => {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" disabled={notesLocked && !isAdmin} title={notesLocked && !isAdmin ? 'Notes are locked - only admins can create' : ''}>
               <Plus className="h-4 w-4" />
               Create Note
             </Button>

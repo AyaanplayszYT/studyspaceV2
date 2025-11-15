@@ -29,8 +29,27 @@ const Tasks = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [tasksLocked, setTasksLocked] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Check if tasks are locked and if user is admin
+  useEffect(() => {
+    const checkSettings = async () => {
+      const { data: settings } = await supabase.from('settings').select('tasks_locked').single() as any;
+      if (settings) setTasksLocked(settings.tasks_locked);
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user?.id)
+        .single() as any;
+      if (profile) setIsAdmin(profile.is_admin);
+    };
+
+    checkSettings();
+  }, [user]);
 
   // Formatting functions
   const insertFormatting = (before: string, after: string = '') => {
@@ -59,6 +78,16 @@ const Tasks = () => {
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if tasks are locked
+    if (tasksLocked && !isAdmin) {
+      toast({
+        title: 'Tasks Locked',
+        description: 'Only admins can create tasks at this time.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const { error } = await supabase.from('tasks').insert({
       user_id: user?.id,
@@ -123,7 +152,7 @@ const Tasks = () => {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" disabled={tasksLocked && !isAdmin} title={tasksLocked && !isAdmin ? 'Tasks are locked - only admins can create' : ''}>
               <Plus className="h-4 w-4" />
               Create Task
             </Button>
