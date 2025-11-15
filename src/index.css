@@ -168,7 +168,7 @@ All colors MUST be HSL.
     /* Dark mode: background.png with a 20% black overlay for more visibility */
     background:
       linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)),
-      url('src/background.png');
+      url('public/background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -224,7 +224,7 @@ All colors MUST be HSL.
     /* Forest theme: background2.png with green overlay */
     background:
       linear-gradient(rgba(72, 115, 74, 0.35), rgba(61, 100, 65, 0.35)),
-      url('src/background2.png');
+      url('public/background2.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
