@@ -364,19 +364,19 @@ export default function Inbox() {
       </div>
 
       {/* Header */}
-      <div className="relative z-10 px-6 py-4 flex-shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Messages</h1>
-            <p className="text-sm text-white/40">Direct messaging & friends</p>
+      <div className="relative z-10 px-4 md:px-6 py-3 md:py-4 flex-shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold text-white truncate">Messages</h1>
+            <p className="text-xs md:text-sm text-white/40 truncate">Direct messaging & friends</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="bg-blue-500/20 text-blue-200 border-blue-400/30">
-              {friends.length} friends
+          <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+            <Badge variant="secondary" className="bg-blue-500/20 text-blue-200 border-blue-400/30 text-xs">
+              {friends.length}
             </Badge>
             {friendRequests.length > 0 && (
-              <Badge variant="destructive" className="bg-red-500/20 text-red-200 border-red-400/30">
-                {friendRequests.length} pending
+              <Badge variant="destructive" className="bg-red-500/20 text-red-200 border-red-400/30 text-xs">
+                {friendRequests.length}
               </Badge>
             )}
           </div>
@@ -384,37 +384,37 @@ export default function Inbox() {
       </div>
 
       {/* Main content area */}
-      <div className="relative z-10 flex-1 flex gap-4 px-6 pb-6 overflow-hidden min-h-0">
-        {/* Left sidebar */}
-        <div className="w-80 flex flex-col gap-3 min-h-0">
+      <div className="relative z-10 flex-1 flex flex-row gap-4 px-2 md:px-6 pb-3 md:pb-6 overflow-hidden min-h-0">
+        {/* Left sidebar - hidden on mobile when chat is selected */}
+        <div className={`${selectedFriend ? 'hidden md:flex' : 'flex'} flex-col gap-3 min-h-0 w-full md:w-80 md:flex-none`}>
           {/* Search and tabs */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 space-y-3 flex-shrink-0">
+          <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 md:p-4 space-y-2 md:space-y-3 flex-shrink-0">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <Input
                 placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40"
+                className="pl-10 bg-white/10 border-white/20 text-white placeholder:text-white/40 text-sm"
               />
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-              <TabsList className="grid grid-cols-4 w-full bg-white/5 border border-white/10">
-                <TabsTrigger value="messages" title="Messages" className="data-[state=active]:bg-blue-500/30">
-                  <MessageSquare className="w-4 h-4" />
+              <TabsList className="grid grid-cols-4 w-full bg-white/5 border border-white/10 h-9">
+                <TabsTrigger value="messages" title="Messages" className="data-[state=active]:bg-blue-500/30 text-xs md:text-sm">
+                  <MessageSquare className="w-3 h-3 md:w-4 md:h-4" />
                 </TabsTrigger>
-                <TabsTrigger value="friends" title="Friends" className="data-[state=active]:bg-blue-500/30">
-                  <Users className="w-4 h-4" />
+                <TabsTrigger value="friends" title="Friends" className="data-[state=active]:bg-blue-500/30 text-xs md:text-sm">
+                  <Users className="w-3 h-3 md:w-4 md:h-4" />
                 </TabsTrigger>
-                <TabsTrigger value="pending" title="Pending" className="data-[state=active]:bg-blue-500/30 relative">
-                  <Mail className="w-4 h-4" />
+                <TabsTrigger value="pending" title="Pending" className="data-[state=active]:bg-blue-500/30 relative text-xs md:text-sm">
+                  <Mail className="w-3 h-3 md:w-4 md:h-4" />
                   {friendRequests.length > 0 && (
                     <span className="absolute top-1 right-1 w-2 h-2 bg-red-400 rounded-full" />
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="discover" title="Discover" className="data-[state=active]:bg-blue-500/30">
-                  <UserPlus className="w-4 h-4" />
+                <TabsTrigger value="discover" title="Discover" className="data-[state=active]:bg-blue-500/30 text-xs md:text-sm">
+                  <UserPlus className="w-3 h-3 md:w-4 md:h-4" />
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -427,8 +427,8 @@ export default function Inbox() {
                 (messages.length === 0 ? (
                   <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 text-center">
                     <Mail className="w-8 h-8 text-white/40 mx-auto mb-2" />
-                    <h3 className="font-semibold text-white mb-1">No conversations</h3>
-                    <p className="text-sm text-white/60">Start by discovering or adding friends</p>
+                    <h3 className="font-semibold text-white mb-1 text-sm">No conversations</h3>
+                    <p className="text-xs text-white/60">Start by discovering or adding friends</p>
                   </div>
                 ) : (
                   (() => {
@@ -577,32 +577,32 @@ export default function Inbox() {
         </div>
 
         {/* Right side - Chat */}
-        <div className="flex-1 flex flex-col gap-4 overflow-hidden min-h-0">
+        <div className={`${!selectedFriend ? 'hidden md:flex' : 'flex'} flex-1 flex-col gap-3 md:gap-4 overflow-hidden min-h-0`}>
           {!selectedFriend ? (
             <div className="flex-1 flex items-center justify-center">
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-8 text-center max-w-md">
+              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 md:p-8 text-center max-w-md">
                 <div className="rounded-full bg-white/10 p-4 mx-auto mb-4 w-fit">
-                  <MessageSquare className="w-8 h-8 text-blue-300" />
+                  <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-blue-300" />
                 </div>
-                <h3 className="font-semibold text-lg text-white mb-2">No conversation selected</h3>
-                <p className="text-sm text-white/60">Choose a friend to start chatting</p>
+                <h3 className="font-semibold text-base md:text-lg text-white mb-2">No conversation selected</h3>
+                <p className="text-xs md:text-sm text-white/60">Choose a friend to start chatting</p>
               </div>
             </div>
           ) : (
             <>
               {/* Chat header */}
-              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-4 flex-shrink-0">
+              <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-3 md:p-4 flex-shrink-0">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={() => { setSelectedFriend(null); setChatMessages([]); }}>
+                  <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                    <Button variant="ghost" size="icon" className="md:hidden" onClick={() => { setSelectedFriend(null); setChatMessages([]); }}>
                       <ArrowLeft className="w-4 h-4" />
                     </Button>
-                    <div>
-                      <h2 className="font-semibold text-white">{selectedFriend.username}</h2>
+                    <div className="min-w-0">
+                      <h2 className="font-semibold text-sm md:text-base text-white truncate">{selectedFriend.username}</h2>
                       <p className="text-xs text-white/50">Direct message</p>
                     </div>
                   </div>
-                  <Button variant="destructive" size="sm" onClick={() => handleRemoveFriend(selectedFriend.id)}>
+                  <Button variant="destructive" size="sm" className="text-xs md:text-sm" onClick={() => handleRemoveFriend(selectedFriend.id)}>
                     Remove
                   </Button>
                 </div>
@@ -610,12 +610,12 @@ export default function Inbox() {
 
               {/* Messages area */}
               <div className="flex-1 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto py-4 px-4 space-y-4 min-h-0" ref={chatScrollRef}>
+                <div className="flex-1 overflow-y-auto py-3 md:py-4 px-3 md:px-4 space-y-3 md:space-y-4 min-h-0" ref={chatScrollRef}>
                   {chatMessages.length === 0 ? (
                     <div className="h-full flex items-center justify-center text-center">
                       <div>
-                        <MessageSquare className="w-8 h-8 text-white/40 mx-auto mb-2" />
-                        <p className="text-sm text-white/60">No messages yet. Start the conversation!</p>
+                        <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-white/40 mx-auto mb-2" />
+                        <p className="text-xs md:text-sm text-white/60">No messages yet. Start the conversation!</p>
                       </div>
                     </div>
                   ) : (
@@ -694,11 +694,11 @@ export default function Inbox() {
                         setIsTyping(false);
                       }
                     }}
-                    className="flex-1 bg-white/10 border border-white/20 text-white placeholder:text-white/40 rounded-lg p-2 resize-none max-h-24 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    rows={3}
+                    className="flex-1 bg-white/10 border border-white/20 text-white placeholder:text-white/40 rounded-lg p-2 resize-none max-h-24 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    rows={2}
                   />
-                  <Button onClick={handleSendMessage} size="icon" disabled={!newMessage.trim()} className="flex-shrink-0">
-                    <Send className="w-4 h-4" />
+                  <Button onClick={handleSendMessage} size="icon" disabled={!newMessage.trim()} className="flex-shrink-0 h-10 w-10 md:h-auto md:w-auto">
+                    <Send className="w-3 h-3 md:w-4 md:h-4" />
                   </Button>
                 </div>
               </div>

@@ -43,9 +43,44 @@ export function ChangelogDialog() {
           <div className="space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-500" />
-              Latest Updates (v2.0)
+              Latest Updates (v2.1)
             </h3>
             <div className="space-y-2 ml-6">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Settings Page</p>
+                  <p className="text-sm text-muted-foreground">Manage username, password, password reset, and theme preferences</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Theme System</p>
+                  <p className="text-sm text-muted-foreground">Default Dark (blue) and Forest Green (#48734A) themes with persistent storage</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Improved AI Chat</p>
+                  <p className="text-sm text-muted-foreground">Beautiful code block rendering for bash/code snippets and improved send button</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Theme-aware Dashboard</p>
+                  <p className="text-sm text-muted-foreground">Username color changes based on selected theme (Blue/Green)</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Vercel Deployment Ready</p>
+                  <p className="text-sm text-muted-foreground">Fixed all asset paths for production deployment</p>
+                </div>
+              </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
@@ -63,22 +98,8 @@ export function ChangelogDialog() {
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Improved Inbox</p>
-                  <p className="text-sm text-muted-foreground">Proper scroll handling, message grouping, and better organization</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <div>
                   <p className="font-medium">Rich Text Formatting</p>
                   <p className="text-sm text-muted-foreground">Bold, italic, lists, headings, and code blocks in Notes & Tasks</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">AI Chat Redesign</p>
-                  <p className="text-sm text-muted-foreground">Glassmorphic floating window with Sparkles icon and top-right positioning</p>
                 </div>
               </div>
             </div>
@@ -158,8 +179,8 @@ export function ChangelogDialog() {
 
           {/* Version Info */}
           <div className="pt-4 border-t text-sm text-muted-foreground">
-            <p><strong>Version:</strong> 2.0.0</p>
-            <p><strong>Last Updated:</strong> November 14, 2025</p>
+            <p><strong>Version:</strong> 2.1.0</p>
+            <p><strong>Last Updated:</strong> November 15, 2025</p>
             <p><strong>Status:</strong> Active Development</p>
           </div>
         </div>

@@ -156,7 +156,7 @@ All colors MUST be HSL.
     /* Light mode: background.png with a calm yellow overlay */
     background:
       linear-gradient(rgba(255, 249, 214, 0.7), rgba(255, 251, 230, 0.7)),
-      url('/src/background.png');
+      url('/background.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;
@@ -168,7 +168,63 @@ All colors MUST be HSL.
     /* Dark mode: background.png with a 20% black overlay for more visibility */
     background:
       linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)),
-      url('/src/background.png');
+      url('src/background.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: hsl(var(--foreground));
+  }
+
+  /* Forest theme with background2.png */
+  .dark.forest {
+    --background: 139 34% 18%;
+    --foreground: 139 30% 95%;
+    --background-gradient: linear-gradient(120deg, #2d5a33 0%, #3d7043 40%, #4d8553 100%);
+
+    --card: 139 34% 20%;
+    --card-foreground: 139 30% 95%;
+
+    --popover: 139 34% 20%;
+    --popover-foreground: 139 30% 95%;
+
+    --primary: 139 34% 40%;
+    --primary-foreground: 139 34% 95%;
+
+    --secondary: 139 40% 50%;
+    --secondary-foreground: 139 34% 20%;
+
+    --muted: 139 30% 30%;
+    --muted-foreground: 139 30% 75%;
+
+    --accent: 139 40% 55%;
+    --accent-foreground: 139 34% 18%;
+
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 139 30% 95%;
+
+    --border: 139 34% 25%;
+    --input: 139 34% 22%;
+    --ring: 139 34% 40%;
+
+    --sidebar-background: 139 34% 18%;
+    --sidebar-foreground: 139 30% 95%;
+    --sidebar-primary: 139 34% 40%;
+    --sidebar-primary-foreground: 139 34% 95%;
+    --sidebar-accent: 139 40% 55%;
+    --sidebar-accent-foreground: 139 34% 18%;
+    --sidebar-border: 139 34% 25%;
+    --sidebar-ring: 139 34% 40%;
+
+    --card-shadow: 0 2px 8px -2px hsl(139 34% 15% / 0.3);
+    --card-shadow-hover: 0 4px 16px -4px hsl(139 34% 15% / 0.4);
+  }
+
+  .dark.forest body {
+    min-height: 100vh;
+    /* Forest theme: background2.png with green overlay */
+    background:
+      linear-gradient(rgba(72, 115, 74, 0.35), rgba(61, 100, 65, 0.35)),
+      url('src/background2.png');
     background-size: cover;
     background-repeat: no-repeat;
     background-attachment: fixed;

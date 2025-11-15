@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
+import { useThemeManager } from '@/hooks/use-theme-manager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Link } from 'react-router-dom';
-import { Flame, Trophy, Target, TrendingUp, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Flame, Trophy, Target, TrendingUp, LogOut, Settings } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 
@@ -16,6 +17,8 @@ interface ProfileData {
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { currentTheme } = useThemeManager();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,14 +59,20 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold mb-2">
-            Welcome back, <span className="text-accent">{profile?.username || 'Student'}</span>
+            Welcome back, <span className={`font-bold ${currentTheme === 'forest' ? 'text-emerald-600' : ''}`} style={currentTheme !== 'forest' ? { color: '#3333FF' } : {}}>{profile?.username || 'Student'}</span>
           </h1>
           <p className="text-muted-foreground">Ready to crush your study goals today?</p>
         </div>
-        <Button onClick={signOut} variant="outline" size="sm">
-          <LogOut className="h-4 w-4 mr-2" />
-          Sign Out
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => navigate('/settings')} variant="outline" size="sm">
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
+          <Button onClick={signOut} variant="outline" size="sm">
+            <LogOut className="h-4 w-4 mr-2" />
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

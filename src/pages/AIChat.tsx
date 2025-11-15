@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { Send } from 'lucide-react';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -16,6 +17,46 @@ const AIChat = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const renderMessageContent = (content: string) => {
+    // Check if content contains code blocks
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    const parts: (string | { type: 'code'; language: string; code: string })[] = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(content.substring(lastIndex, match.index));
+      }
+      parts.push({
+        type: 'code',
+        language: match[1] || 'bash',
+        code: match[2].trim(),
+      });
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+
+    return (
+      <div className="space-y-2">
+        {parts.map((part, i) =>
+          typeof part === 'string' ? (
+            <p key={i} className="text-sm whitespace-pre-line">
+              {part}
+            </p>
+          ) : (
+            <pre key={i} className="bg-slate-900 text-slate-100 p-3 rounded-lg overflow-x-auto border border-slate-700">
+              <code className="text-xs font-mono">{part.code}</code>
+            </pre>
+          )
+        )}
+      </div>
+    );
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -84,17 +125,17 @@ const AIChat = () => {
                       : 'bg-card border border-border'
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex items-center gap-2 mb-2">
                     {msg.role !== 'user' && (
                       <img
-                        src="/src/gpt.png"
+                        src="/gpt.png"
                         alt="AI"
                         className="h-5 w-5 rounded-full border border-border"
                       />
                     )}
                     <p className="font-semibold text-sm">{msg.role === 'user' ? 'You' : 'AI Assistant'}</p>
                   </div>
-                  <p className="text-sm whitespace-pre-line">{msg.content}</p>
+                  {renderMessageContent(msg.content)}
                 </div>
               </div>
             ))}
@@ -105,20 +146,19 @@ const AIChat = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask anything..."
-              className="flex-1"
+              className="flex-1 text-sm md:text-base"
               disabled={loading}
             />
             <Button
               type="submit"
-              size="icon"
+              size="sm"
               disabled={loading || !input.trim()}
-              className="rounded-full bg-accent text-accent-foreground hover:bg-accent/80 shadow-sm transition-all flex items-center justify-center"
-              style={{ minWidth: 44, minHeight: 44, padding: 0 }}
+              className="px-3 md:px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-all shadow-sm whitespace-nowrap"
             >
               {loading ? (
-                <span className="animate-spin">...</span>
+                <span className="text-xs md:text-sm">Sending...</span>
               ) : (
-                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                <Send className="h-4 w-4 md:h-5 md:w-5" />
               )}
             </Button>
           </form>
@@ -129,3 +169,4 @@ const AIChat = () => {
 };
 
 export default AIChat;
+
