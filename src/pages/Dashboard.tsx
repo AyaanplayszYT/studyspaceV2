@@ -87,7 +87,11 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold mb-2">
-            Welcome back, <span className={`font-bold ${currentTheme === 'forest' ? 'text-emerald-600' : ''}`} style={currentTheme !== 'forest' ? { color: '#3333FF' } : {}}>{profile?.username || 'Student'}</span>
+            Welcome back, <span className={`font-bold ${
+              currentTheme === 'forest' ? 'text-emerald-500' : 
+              currentTheme === 'purple' ? 'text-purple-400' : 
+              'text-blue-400'
+            }`}>{profile?.username || 'Student'}</span>
           </h1>
           <p className="text-muted-foreground">{greeting}</p>
         </div>

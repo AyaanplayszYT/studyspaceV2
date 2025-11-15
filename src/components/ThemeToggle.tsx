@@ -1,7 +1,14 @@
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Trees, Sparkles } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -19,16 +26,47 @@ export function ThemeToggle() {
     );
   }
 
+  const themes = [
+    { id: "light", name: "Light", icon: Sun },
+    { id: "dark", name: "Dark", icon: Moon },
+    { id: "dark forest", name: "Forest", icon: Trees },
+    { id: "dark purple", name: "Purple", icon: Sparkles },
+  ];
+
+  const currentThemeName = themes.find((t) => t.id === theme)?.name || "Light";
+  const currentIcon = themes.find((t) => t.id === theme)?.icon || Sun;
+  const CurrentIcon = currentIcon;
+
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-9 w-9 relative overflow-hidden"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-    >
-      <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-500 dark:-rotate-90 dark:scale-0" />
-      <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-500 dark:rotate-0 dark:scale-100" />
-      <span className="sr-only">Toggle theme</span>
-    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9"
+          title={`Current theme: ${currentThemeName}`}
+        >
+          <CurrentIcon className="h-4 w-4" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {themes.map((t) => {
+          const IconComponent = t.icon;
+          return (
+            <DropdownMenuItem
+              key={t.id}
+              onClick={() => setTheme(t.id)}
+              className="cursor-pointer flex items-center gap-2"
+            >
+              <IconComponent className="h-4 w-4" />
+              <span>{t.name}</span>
+              {theme === t.id && <span className="ml-auto">✓</span>}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
+

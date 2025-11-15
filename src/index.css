@@ -230,8 +230,65 @@ All colors MUST be HSL.
     background-attachment: fixed;
     color: hsl(var(--foreground));
   }
+
+  /* Purple theme with background3.png */
+  .dark.purple {
+    --background: 270 60% 12%;
+    --foreground: 270 30% 95%;
+    --background-gradient: linear-gradient(120deg, #4a2e7a 0%, #5d3f8c 40%, #6e50a1 100%);
+
+    --card: 270 60% 14%;
+    --card-foreground: 270 30% 95%;
+
+    --popover: 270 60% 14%;
+    --popover-foreground: 270 30% 95%;
+
+    --primary: 270 60% 50%;
+    --primary-foreground: 270 30% 95%;
+
+    --secondary: 270 70% 60%;
+    --secondary-foreground: 270 60% 12%;
+
+    --muted: 270 40% 25%;
+    --muted-foreground: 270 30% 75%;
+
+    --accent: 280 80% 65%;
+    --accent-foreground: 270 60% 12%;
+
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 270 30% 95%;
+
+    --border: 270 60% 20%;
+    --input: 270 60% 16%;
+    --ring: 270 60% 50%;
+
+    --sidebar-background: 270 60% 12%;
+    --sidebar-foreground: 270 30% 95%;
+    --sidebar-primary: 270 60% 50%;
+    --sidebar-primary-foreground: 270 30% 95%;
+    --sidebar-accent: 280 80% 65%;
+    --sidebar-accent-foreground: 270 60% 12%;
+    --sidebar-border: 270 60% 20%;
+    --sidebar-ring: 270 60% 50%;
+
+    --card-shadow: 0 2px 8px -2px hsl(270 60% 10% / 0.3);
+    --card-shadow-hover: 0 4px 16px -4px hsl(270 60% 10% / 0.4);
+  }
+
+  .dark.purple body {
+    min-height: 100vh;
+    /* Purple theme: background3.png with purple overlay */
+    background:
+      linear-gradient(rgba(93, 63, 140, 0.35), rgba(110, 80, 161, 0.35)),
+      url('/background3.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: hsl(var(--foreground));
+  }
   
   html {
     @apply scroll-smooth;
   }
 }
+

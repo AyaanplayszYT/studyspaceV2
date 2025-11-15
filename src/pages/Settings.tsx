@@ -211,16 +211,23 @@ const Settings = () => {
     {
       id: 'default',
       name: 'Default Dark',
-      description: 'Dark theme with background.png',
+      description: 'A sleek dark theme',
       bgImage: 'url(/background.png)',
       colors: 'bg-slate-900',
     },
     {
       id: 'forest',
       name: 'Forest Green',
-      description: 'Lush green theme with background2.png',
+      description: 'A lush green theme',
       bgImage: 'url(/background2.png)',
       colors: 'bg-emerald-900',
+    },
+    {
+      id: 'purple',
+      name: 'Mystical Purple',
+      description: 'An elegant dark purple theme',
+      bgImage: 'url(/background3.png)',
+      colors: 'bg-purple-900',
     },
   ];
 
@@ -410,9 +417,6 @@ const Settings = () => {
           <Card>
             <CardHeader>
               <CardTitle>Choose a Theme</CardTitle>
-              <CardDescription>
-                Select your preferred color theme and background
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

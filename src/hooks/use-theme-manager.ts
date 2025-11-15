@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useTheme } from 'next-themes';
 
 export const useThemeManager = () => {
   const [currentTheme, setCurrentTheme] = useState('default');
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     // Load theme from localStorage on mount
@@ -14,13 +16,18 @@ export const useThemeManager = () => {
     const htmlElement = document.documentElement;
     
     // Remove all theme classes
-    htmlElement.classList.remove('forest', 'default');
+    htmlElement.classList.remove('dark', 'forest', 'purple', 'default');
     
-    // Add the new theme class
-    if (themeId === 'forest') {
-      htmlElement.classList.add('forest');
-    } else {
-      htmlElement.classList.add('default');
+    // Apply appropriate classes based on theme
+    if (themeId === 'default') {
+      setTheme('dark');
+      htmlElement.classList.add('dark');
+    } else if (themeId === 'forest') {
+      setTheme('dark');
+      htmlElement.classList.add('dark', 'forest');
+    } else if (themeId === 'purple') {
+      setTheme('dark');
+      htmlElement.classList.add('dark', 'purple');
     }
   };
 
