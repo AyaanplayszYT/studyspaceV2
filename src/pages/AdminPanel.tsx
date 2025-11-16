@@ -16,6 +16,7 @@ interface Settings {
   ai_locked: boolean;
   chat_locked: boolean;
   tasks_locked: boolean;
+  study_rooms_locked: boolean;
   updated_at: string;
 }
 
@@ -316,6 +317,31 @@ export default function AdminPanel() {
                 {settings.tasks_locked
                   ? 'Only admins can create tasks'
                   : 'All users can create tasks'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lock className="h-5 w-5" />
+                Study Rooms
+              </CardTitle>
+              <CardDescription>Lock/unlock study room features</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="font-medium">Lock Study Rooms</span>
+                <Switch
+                  checked={settings.study_rooms_locked}
+                  onCheckedChange={(value) => updateSetting('study_rooms_locked', value)}
+                  disabled={loading}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {settings.study_rooms_locked
+                  ? 'Study rooms are locked for all users'
+                  : 'All users can create and join study rooms'}
               </p>
             </CardContent>
           </Card>

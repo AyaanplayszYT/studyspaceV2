@@ -99,7 +99,8 @@ All colors MUST be HSL.
     --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .dark {
+  .dark,
+  html.dark {
     --background: 240 100% 8%;
     --foreground: 240 100% 98%;
     --background-gradient: linear-gradient(120deg, #0a0a23 0%, #1a1a40 40%, #2d2d7a 100%);
@@ -153,9 +154,10 @@ All colors MUST be HSL.
 
   body {
     min-height: 100vh;
-    /* Light mode: background.png with a calm yellow overlay */
-    background:
-      linear-gradient(rgba(255, 249, 214, 0.7), rgba(255, 251, 230, 0.7)),
+    background-color: hsl(var(--background));
+    /* Dark mode: background.png with a 20% black overlay for more visibility */
+    background-image:
+      linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)),
       url('/background.png');
     background-size: cover;
     background-repeat: no-repeat;
@@ -163,16 +165,12 @@ All colors MUST be HSL.
     color: hsl(var(--foreground));
   }
 
-  .dark body {
-    min-height: 100vh;
-    /* Dark mode: background.png with a 20% black overlay for more visibility */
-    background:
+  .dark body,
+  html.dark body {
+    background-color: hsl(var(--background));
+    background-image:
       linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)),
       url('/background.png');
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    color: hsl(var(--foreground));
   }
 
   /* Forest theme with background2.png */

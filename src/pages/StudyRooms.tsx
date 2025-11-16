@@ -39,15 +39,38 @@ export default function StudyRooms() {
   const [maxParticipants, setMaxParticipants] = useState(10);
   const [joinCode, setJoinCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
-  const [locked, setLocked] = useState(true);
+  const [locked, setLocked] = useState(false);
 
   useEffect(() => {
     // Fetch locked status from settings table
     const fetchLocked = async () => {
       const { data, error } = await supabase.from('settings').select('study_rooms_locked').single();
-      if (!error && data) setLocked(data.study_rooms_locked);
+      if (!error && data) {
+        setLocked(data.study_rooms_locked);
+      } else {
+        // Default to unlocked if there's an error
+        setLocked(false);
+      }
     };
     fetchLocked();
+
+    // Subscribe to settings changes
+    const subscription = supabase
+      .channel('settings_changes')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'settings' },
+        (payload) => {
+          if (payload.new.study_rooms_locked !== undefined) {
+            setLocked(payload.new.study_rooms_locked);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, []);
 
   useEffect(() => {
@@ -92,6 +115,15 @@ export default function StudyRooms() {
   };
 
   const handleCreateRoom = async () => {
+    if (locked) {
+      toast({
+        title: 'Error',
+        description: 'Study rooms are currently locked by admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!user || !roomName.trim()) {
       toast({
         title: 'Error',
@@ -148,6 +180,15 @@ export default function StudyRooms() {
   };
 
   const handleJoinRoom = async () => {
+    if (locked) {
+      toast({
+        title: 'Error',
+        description: 'Study rooms are currently locked by admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!user || !joinCode.trim()) {
       toast({
         title: 'Error',
@@ -161,7 +202,7 @@ export default function StudyRooms() {
     try {
       const { data: room, error: fetchError } = await supabase
         .from('study_rooms')
-        .select('id, room_participants (id)')
+        .select('id, max_participants, room_participants (id)')
         .eq('room_code', joinCode.toUpperCase())
         .eq('is_active', true)
         .single() as any;
@@ -210,6 +251,15 @@ export default function StudyRooms() {
   };
 
   const handleJoinFromCard = async (roomId: string) => {
+    if (locked) {
+      toast({
+        title: 'Error',
+        description: 'Study rooms are currently locked by admin',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     if (!user) return;
 
     try {
@@ -239,7 +289,7 @@ export default function StudyRooms() {
             <span className="px-2 py-1 rounded bg-yellow-400 text-xs font-bold text-black">BETA</span>
             {locked && <span className="px-2 py-1 rounded bg-red-500 text-xs font-bold text-white">Locked</span>}
           </h1>
-          <p className="text-muted-foreground">Connect with others in real-time video study sessions</p>
+          <p className="text-muted-foreground">Connect with others in collaborative study sessions</p>
         </div>
         <div className="flex gap-2">
           <Dialog>
@@ -367,8 +417,9 @@ export default function StudyRooms() {
                   </div>
                   <Button
                     onClick={() => handleJoinFromCard(room.id)}
-                    disabled={room.room_participants.length >= room.max_participants}
+                    disabled={room.room_participants.length >= room.max_participants || locked}
                     size="sm"
+                    title={locked ? 'Study rooms are locked' : ''}
                   >
                     Join
                   </Button>

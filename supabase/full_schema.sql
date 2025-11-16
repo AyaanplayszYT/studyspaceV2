@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
   ai_locked BOOLEAN DEFAULT false NOT NULL,
   chat_locked BOOLEAN DEFAULT false NOT NULL,
   tasks_locked BOOLEAN DEFAULT false NOT NULL,
-  study_rooms_locked BOOLEAN DEFAULT true NOT NULL,
+  study_rooms_locked BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
@@ -260,6 +260,14 @@ ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can view settings"
   ON public.settings FOR SELECT
   USING (true);
+
+CREATE POLICY "Only admins can insert settings"
+  ON public.settings FOR INSERT
+  WITH CHECK (
+    auth.uid() IN (
+      SELECT id FROM public.profiles WHERE is_admin = true
+    )
+  );
 
 CREATE POLICY "Only admins can update settings"
   ON public.settings FOR UPDATE
@@ -271,8 +279,11 @@ CREATE POLICY "Only admins can update settings"
 
 -- Insert default settings
 INSERT INTO public.settings (notes_locked, ai_locked, chat_locked, tasks_locked, study_rooms_locked)
-VALUES (false, false, false, false, true)
+VALUES (false, false, false, false, false)
 ON CONFLICT DO NOTHING;
+
+-- Enforce that settings has at most one row
+CREATE UNIQUE INDEX IF NOT EXISTS only_one_settings_row ON public.settings ((true));
 
 -- STUDY ROOMS TABLE
 CREATE TABLE IF NOT EXISTS public.study_rooms (
@@ -408,8 +419,32 @@ CREATE POLICY "Users can delete their own signals"
   ON public.webrtc_signals FOR DELETE
   USING (auth.uid() = from_user_id OR auth.uid() = to_user_id);
 
--- Enable realtime for WebRTC signaling
-ALTER PUBLICATION supabase_realtime ADD TABLE public.webrtc_signals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_participants;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.room_chat_messages;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.study_rooms;
+-- Enable realtime for WebRTC signaling, study rooms, and admin controls (idempotent)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'webrtc_signals'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.webrtc_signals';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'room_participants'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.room_participants';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'room_chat_messages'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.room_chat_messages';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'study_rooms'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.study_rooms';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables WHERE pubname = 'supabase_realtime' AND schemaname = 'public' AND tablename = 'settings'
+  ) THEN
+    EXECUTE 'ALTER PUBLICATION supabase_realtime ADD TABLE public.settings';
+  END IF;
+END$$;

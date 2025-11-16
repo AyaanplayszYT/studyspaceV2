@@ -7,12 +7,17 @@ import { ThemeProvider } from "./components/ThemeProvider";
 const storedTheme = localStorage.getItem("app-theme") || "default";
 const htmlElement = document.documentElement;
 
+// Ensure dark class is applied immediately
+htmlElement.classList.add('dark');
+
 // Remove all theme classes first
-htmlElement.classList.remove('forest', 'default');
+htmlElement.classList.remove('forest', 'default', 'purple');
 
 // Apply the stored theme
 if (storedTheme === "forest") {
   htmlElement.classList.add("forest");
+} else if (storedTheme === "purple") {
+  htmlElement.classList.add("purple");
 } else {
   htmlElement.classList.add("default");
 }

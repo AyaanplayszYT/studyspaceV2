@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,9 +10,18 @@
     <meta property="og:title" content="StudySpaceV2" />
     <meta property="og:description" content="Share notes, create tasks, chat with classmates, and compete on the leaderboard" />
     <link rel="icon" type="image/png" href="src/logo.png" />
+    
+    <style>
+      html {
+        background: linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('/background.png');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+      }
+    </style>
   </head>
 
-  <body>
+  <body class="dark">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
