@@ -40,8 +40,7 @@
 ✅ **Participant Management** - See all active participants in the room  
 ✅ **Mic & Camera Controls** - Toggle audio/video on and off during sessions  
 ✅ **Room Chat** - Text chat alongside video for quick notes/coordination  
-✅ **Participant Limit** - Set max participants when creating rooms  
-✅ **Real-time Updates** - Participants list updates as people join/leave  
+✅ **Participant Limit** - Set max participants when creating rooms   
 
 ### Inbox Page
 ✅ Scroll features for all tabs (Discover Friends, Pending Messages, Friends, Messages)  
