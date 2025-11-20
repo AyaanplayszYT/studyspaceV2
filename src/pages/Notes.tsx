@@ -43,6 +43,8 @@ const FormattedText = ({ text }: { text: string }) => {
         __html: result
           .split('\n')
           .map((line) => {
+            // Preserve empty lines with a non-breaking space
+            if (line.trim() === '') return `<div class="text-white font-semibold my-1 break-words h-4">&nbsp;</div>`;
             if (line.includes('<h1>')) return `<div class="text-white font-bold text-lg mt-4 mb-2 break-words">${line.replace(/<h1>(.*?)<\/h1>/, '$1')}</div>`;
             if (line.includes('<h2>')) return `<div class="text-white font-bold text-base mt-4 mb-2 break-words">${line.replace(/<h2>(.*?)<\/h2>/, '$1')}</div>`;
             if (line.includes('<h3>')) return `<div class="text-white font-bold text-sm mt-3 mb-1 break-words">${line.replace(/<h3>(.*?)<\/h3>/, '$1')}</div>`;

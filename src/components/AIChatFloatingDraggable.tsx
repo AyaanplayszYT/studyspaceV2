@@ -132,7 +132,7 @@ export function AIChatFloatingDraggable() {
       <Button
         variant="secondary"
         size="icon"
-        className="fixed top-6 right-6 z-40 rounded-full shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
+        className="fixed top-6 right-6 z-40 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground"
         aria-label="Open AI Assistant"
         onClick={() => setOpen(true)}
         style={{ display: open ? 'none' : 'inline-flex' }}
@@ -178,7 +178,7 @@ export function AIChatFloatingDraggable() {
                 <div
                   className={`max-w-[80%] rounded-2xl px-4 py-2 ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-none'
+                      ? 'bg-primary text-primary-foreground rounded-br-none'
                       : 'bg-white/10 text-white rounded-bl-none border border-white/20'
                   }`}
                 >
@@ -223,7 +223,7 @@ export function AIChatFloatingDraggable() {
                 type="submit"
                 size="icon"
                 disabled={loading || !input.trim() || cooldownSeconds > 0}
-                className="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+                className="flex-shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-all"
                 title={cooldownSeconds > 0 ? `Wait ${cooldownSeconds}s` : 'Send message'}
               >
                 {cooldownSeconds > 0 ? (

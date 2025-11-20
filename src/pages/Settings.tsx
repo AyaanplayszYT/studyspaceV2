@@ -214,6 +214,7 @@ const Settings = () => {
       description: 'A sleek dark theme',
       bgImage: 'url(/background.png)',
       colors: 'bg-slate-900',
+      beta: false,
     },
     {
       id: 'forest',
@@ -221,6 +222,8 @@ const Settings = () => {
       description: 'A lush green theme',
       bgImage: 'url(/background2.png)',
       colors: 'bg-emerald-900',
+      beta: true,
+      betaStatus: 'Not Fixed',
     },
     {
       id: 'purple',
@@ -228,6 +231,8 @@ const Settings = () => {
       description: 'An elegant dark purple theme',
       bgImage: 'url(/background3.png)',
       colors: 'bg-purple-900',
+      beta: true,
+      betaStatus: 'Not Fixed',
     },
   ];
 
@@ -430,6 +435,16 @@ const Settings = () => {
                         : 'border-border hover:border-accent/50'
                     }`}
                   >
+                    {t.beta && (
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        <Badge variant="outline" className="text-xs bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
+                          Beta
+                        </Badge>
+                        <Badge variant="outline" className="text-xs bg-orange-500/20 text-orange-600 border-orange-500/30">
+                          {t.betaStatus}
+                        </Badge>
+                      </div>
+                    )}
                     <div
                       className={`w-full h-32 rounded-md mb-3 ${t.colors} opacity-30 border border-border`}
                       style={{

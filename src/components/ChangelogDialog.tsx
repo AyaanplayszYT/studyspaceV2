@@ -43,9 +43,30 @@ export function ChangelogDialog() {
           <div className="space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-500" />
-              Latest Updates (v2.1)
+              Latest Updates (v2.2)
             </h3>
             <div className="space-y-2 ml-6">
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Complete Theme System Overhaul</p>
+                  <p className="text-sm text-muted-foreground">Added Mystical Purple theme, fixed color cascade issues, all UI components now properly respond to theme changes</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Line Spacing Preservation</p>
+                  <p className="text-sm text-muted-foreground">Fixed empty line collapsing in Notes and Tasks - proper formatting now maintained</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">CSS Variable System</p>
+                  <p className="text-sm text-muted-foreground">Implemented inline styles with !important for guaranteed theme variable propagation</p>
+                </div>
+              </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
@@ -57,7 +78,7 @@ export function ChangelogDialog() {
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Theme System</p>
-                  <p className="text-sm text-muted-foreground">Default Dark (blue) and Forest Green (#48734A) themes with persistent storage</p>
+                  <p className="text-sm text-muted-foreground">Default Dark (blue), Forest Green, and Mystical Purple themes with persistent storage</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -71,7 +92,7 @@ export function ChangelogDialog() {
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
                   <p className="font-medium">Theme-aware Dashboard</p>
-                  <p className="text-sm text-muted-foreground">Username color changes based on selected theme (Blue/Green)</p>
+                  <p className="text-sm text-muted-foreground">Username color changes based on selected theme (Blue/Green/Purple)</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -179,8 +200,8 @@ export function ChangelogDialog() {
 
           {/* Version Info */}
           <div className="pt-4 border-t text-sm text-muted-foreground">
-            <p><strong>Version:</strong> 2.1.0</p>
-            <p><strong>Last Updated:</strong> November 15, 2025</p>
+            <p><strong>Version:</strong> 2.2.0</p>
+            <p><strong>Last Updated:</strong> November 20, 2025</p>
             <p><strong>Status:</strong> Active Development</p>
           </div>
         </div>

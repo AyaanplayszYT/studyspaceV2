@@ -3,25 +3,6 @@ import App from "./App.tsx";
 import "./index.css";
 import { ThemeProvider } from "./components/ThemeProvider";
 
-// Get stored theme from localStorage and apply it immediately
-const storedTheme = localStorage.getItem("app-theme") || "default";
-const htmlElement = document.documentElement;
-
-// Ensure dark class is applied immediately
-htmlElement.classList.add('dark');
-
-// Remove all theme classes first
-htmlElement.classList.remove('forest', 'default', 'purple');
-
-// Apply the stored theme
-if (storedTheme === "forest") {
-  htmlElement.classList.add("forest");
-} else if (storedTheme === "purple") {
-  htmlElement.classList.add("purple");
-} else {
-  htmlElement.classList.add("default");
-}
-
 createRoot(document.getElementById("root")!).render(
   <ThemeProvider 
     attribute="class" 
@@ -32,4 +13,5 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </ThemeProvider>
 );
+
 

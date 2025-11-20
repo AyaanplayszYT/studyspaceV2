@@ -22,6 +22,25 @@ interface Task {
   user_id: string;
 }
 
+// Component to handle line breaks and spacing in task descriptions
+const TaskDescription = ({ content }: { content: string }) => {
+  return (
+    <div className="space-y-0">
+      {content.split('\n').map((line, index) => {
+        // Preserve empty lines with a non-breaking space
+        if (line.trim() === '') {
+          return <div key={index} className="h-3">&nbsp;</div>;
+        }
+        return (
+          <div key={index} className="prose prose-sm dark:prose-invert prose-headings:text-xs prose-p:text-sm prose-li:text-sm max-w-none">
+            <ReactMarkdown>{line}</ReactMarkdown>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Tasks = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -231,8 +250,8 @@ const Tasks = () => {
                   {task.title}
                 </h3>
                 {task.description && (
-                  <div className="text-sm text-muted-foreground mt-1 prose prose-sm dark:prose-invert prose-headings:text-xs prose-p:text-sm prose-li:text-sm max-w-none">
-                    <ReactMarkdown>{task.description}</ReactMarkdown>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    <TaskDescription content={task.description} />
                   </div>
                 )}
                 {task.due_date && (
