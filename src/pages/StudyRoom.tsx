@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
-import { useThemeManager } from '@/hooks/use-theme-manager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Phone, Send, Users, Copy, ChevronLeft, Mic, MicOff } from 'lucide-react';
+import { Send, Users, Copy, ChevronLeft, Video, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -30,45 +29,13 @@ export default function StudyRoom() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { currentTheme } = useThemeManager();
 
   const [room, setRoom] = useState<any>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isAudioOn, setIsAudioOn] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [needsAudioUnlock, setNeedsAudioUnlock] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const signalingChannelRef = useRef<any>(null);
-  const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map());
-  const remoteStreamsRef = useRef<Map<string, MediaStream>>(new Map());
-  const audioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
-  const audioContainerRef = useRef<HTMLDivElement | null>(null);
-  const isInitializedRef = useRef(false);
-  const hasLeftRef = useRef(false);
-
-  // Optimized ICE servers and optional TURN from env for reliability
-  const rtcConfiguration: RTCConfiguration = (() => {
-    const iceServers: RTCIceServer[] = [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:stun1.l.google.com:19302' },
-      { urls: 'stun:stun2.l.google.com:19302' },
-    ];
-    const turnUrl = (import.meta as any)?.env?.VITE_TURN_URL;
-    const turnUsername = (import.meta as any)?.env?.VITE_TURN_USERNAME;
-    const turnCredential = (import.meta as any)?.env?.VITE_TURN_CREDENTIAL;
-    if (turnUrl && turnUsername && turnCredential) {
-      iceServers.push({ urls: turnUrl, username: turnUsername, credential: turnCredential });
-    }
-    return {
-      iceServers,
-      iceCandidatePoolSize: 10,
-      bundlePolicy: 'max-bundle',
-      rtcpMuxPolicy: 'require',
-    } as RTCConfiguration;
-  })();
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!roomId || !user) return;
@@ -77,10 +44,8 @@ export default function StudyRoom() {
       await fetchRoom();
       await fetchParticipants();
       await fetchMessages();
-      await initializeLocalStream();
       await joinRoom();
       await setupSignalingChannel();
-      isInitializedRef.current = true;
     };
 
     initializeRoom();
@@ -89,49 +54,6 @@ export default function StudyRoom() {
       cleanup();
     };
   }, [roomId, user]);
-
-  // Redirect only when we've explicitly left
-  useEffect(() => {
-    if (loading || !user || !isInitializedRef.current) return;
-    const currentUserInRoom = participants.some((p) => p.user_id === user.id);
-    if (hasLeftRef.current && !currentUserInRoom) {
-      navigate('/study-rooms');
-    }
-  }, [participants, user, loading, navigate]);
-
-  // Best-effort cleanup on tab close/refresh
-  useEffect(() => {
-    const onBeforeUnload = () => {
-      try { cleanup(); } catch {}
-    };
-    window.addEventListener('beforeunload', onBeforeUnload);
-    return () => window.removeEventListener('beforeunload', onBeforeUnload);
-  }, []);
-
-  // Setup WebRTC connections when participants change
-  useEffect(() => {
-    if (!isInitializedRef.current || !user || !localStreamRef.current) return;
-
-    // Deterministic offerer to avoid glare: only the lexicographically smaller user_id initiates
-    participants.forEach((participant) => {
-      if (participant.user_id === user.id) return;
-      const existingConnection = peerConnectionsRef.current.get(participant.user_id);
-      if (existingConnection) return;
-
-      const iAmOfferer = String(user.id) < String(participant.user_id);
-      if (iAmOfferer) {
-        createPeerConnection(participant.user_id, participant.username);
-      }
-    });
-
-    // Clean up connections for users who left
-    peerConnectionsRef.current.forEach((pc, userId) => {
-      const stillInRoom = participants.some((p) => p.user_id === userId);
-      if (!stillInRoom) {
-        closePeerConnection(userId);
-      }
-    });
-  }, [participants, user]);
 
   useEffect(() => {
     scrollToBottom();
@@ -142,37 +64,8 @@ export default function StudyRoom() {
   };
 
   const cleanup = () => {
-    // Close all peer connections
-    peerConnectionsRef.current.forEach((pc) => {
-      pc.close();
-    });
-    peerConnectionsRef.current.clear();
-
-    // Stop all audio elements
-    audioElementsRef.current.forEach((audio) => {
-      audio.pause();
-      audio.srcObject = null;
-      // Remove from DOM if attached
-      try {
-        if (audio.parentNode) {
-          audio.parentNode.removeChild(audio);
-        }
-      } catch {}
-    });
-    audioElementsRef.current.clear();
-
-    // Stop local stream tracks
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
-      localStreamRef.current = null;
-    }
-
-    // Unsubscribe from signaling
-    if (signalingChannelRef.current) {
-      supabase.removeChannel(signalingChannelRef.current);
-      signalingChannelRef.current = null;
-    }
-    isInitializedRef.current = false;
+    // Clean up subscriptions
+    supabase.removeAllChannels();
   };
 
   const joinRoom = async () => {
@@ -324,71 +217,12 @@ export default function StudyRoom() {
     }
   };
 
-  const initializeLocalStream = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        },
-      });
-
-      localStreamRef.current = stream;
-
-      const audioTrack = stream.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = isAudioOn;
-        if ('contentHint' in audioTrack) {
-          (audioTrack as any).contentHint = 'speech';
-        }
-      }
-
-      toast({
-        title: 'Success',
-        description: 'Microphone connected',
-      });
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Failed to access microphone. Please check your browser permissions.',
-        variant: 'destructive',
-      });
-      console.error('Error accessing microphone:', err);
-    }
-  };
-
-  const handleToggleAudio = () => {
-    if (localStreamRef.current) {
-      const audioTrack = localStreamRef.current.getAudioTracks()[0];
-      if (audioTrack) {
-        audioTrack.enabled = !isAudioOn;
-        setIsAudioOn(!isAudioOn);
-        toast({
-          title: isAudioOn ? 'Microphone Off' : 'Microphone On',
-          description: isAudioOn ? 'Your microphone is now muted' : 'Your microphone is now active',
-        });
-      }
-    }
-  };
-
-  const handleToggleVideo = () => {
-    if (localStreamRef.current) {
-      const videoTrack = localStreamRef.current.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.enabled = !isVideoOn;
-        setIsVideoOn(!isVideoOn);
-      }
-    }
-  };
-
   const handleLeaveRoom = async () => {
     try {
-      hasLeftRef.current = true;
-      // Clean up connections, streams, and subscriptions immediately
+      // Clean up subscriptions
       cleanup();
       
-      // Delete participant record (this removes them from the room)
+      // Delete participant record
       const { error } = await supabase
         .from('room_participants')
         .delete()
@@ -405,7 +239,6 @@ export default function StudyRoom() {
         description: 'Failed to leave room',
         variant: 'destructive',
       });
-      // Navigate anyway even if delete fails
       setTimeout(() => navigate('/study-rooms'), 500);
     }
   };
@@ -432,241 +265,6 @@ export default function StudyRoom() {
     }
   };
 
-  // Optimized WebRTC functions for audio-only peer connections
-  const createPeerConnection = async (participantUserId: string, participantUsername: string) => {
-    try {
-      const peerConnection = new RTCPeerConnection(rtcConfiguration);
-      
-      // Add local audio stream
-      if (localStreamRef.current) {
-        localStreamRef.current.getAudioTracks().forEach((track) => {
-          peerConnection.addTrack(track, localStreamRef.current!);
-        });
-      }
-
-      // Handle remote audio stream
-      peerConnection.ontrack = (event) => {
-        console.log('Received remote audio from:', participantUserId);
-        
-        const remoteStream = event.streams[0];
-        remoteStreamsRef.current.set(participantUserId, remoteStream);
-
-        // Create or update audio element for remote stream
-        let audioElement = audioElementsRef.current.get(participantUserId);
-        if (!audioElement) {
-          audioElement = document.createElement('audio');
-          audioElement.autoplay = true;
-          audioElement.playsinline = true;
-          audioElementsRef.current.set(participantUserId, audioElement);
-        }
-        
-        audioElement.srcObject = remoteStream;
-        audioElement.muted = false;
-        // Append to hidden container if not already attached
-        try {
-          if (audioContainerRef.current && !audioContainerRef.current.contains(audioElement)) {
-            audioContainerRef.current.appendChild(audioElement);
-          }
-          audioElement.play?.().catch((err: any) => {
-            // Autoplay blocked
-            setNeedsAudioUnlock(true);
-            console.warn('Autoplay blocked, user interaction required:', err);
-          });
-        } catch {}
-      };
-
-      // Handle ICE candidates
-      peerConnection.onicecandidate = async (event) => {
-        if (event.candidate) {
-          try {
-            await supabase.from('webrtc_signals').insert({
-              room_id: roomId,
-              from_user_id: user?.id,
-              to_user_id: participantUserId,
-              signal_type: 'ice-candidate',
-              signal_data: event.candidate.toJSON(),
-            });
-          } catch (err) {
-            console.error('Error sending ICE candidate:', err);
-          }
-        }
-      };
-
-      // Handle connection state changes
-      peerConnection.onconnectionstatechange = () => {
-        console.log(`Connection state with ${participantUsername}:`, peerConnection.connectionState);
-        
-        if (peerConnection.connectionState === 'failed' || peerConnection.connectionState === 'closed') {
-          closePeerConnection(participantUserId);
-        }
-      };
-
-      peerConnectionsRef.current.set(participantUserId, peerConnection);
-
-      // Create and send offer
-      const offer = await peerConnection.createOffer({
-        offerToReceiveAudio: true,
-        voiceActivityDetection: false,
-      });
-
-      await peerConnection.setLocalDescription(offer);
-
-      try {
-        await supabase.from('webrtc_signals').insert({
-          room_id: roomId,
-          from_user_id: user?.id,
-          to_user_id: participantUserId,
-          signal_type: 'offer',
-          signal_data: offer,
-        });
-      } catch (err) {
-        console.error('Error sending offer:', err);
-      }
-
-      console.log('Sent offer to:', participantUsername);
-    } catch (err) {
-      console.error('Error creating peer connection:', err);
-    }
-  };
-
-  const handleOffer = async (fromUserId: string, offer: RTCSessionDescriptionInit) => {
-    try {
-      let peerConnection = peerConnectionsRef.current.get(fromUserId);
-      
-      // Create peer connection if it doesn't exist
-      if (!peerConnection) {
-        peerConnection = new RTCPeerConnection(rtcConfiguration);
-        
-        // Add local audio stream
-        if (localStreamRef.current) {
-          localStreamRef.current.getAudioTracks().forEach((track) => {
-            peerConnection!.addTrack(track, localStreamRef.current!);
-          });
-        }
-
-        // Handle remote audio stream
-        peerConnection.ontrack = (event) => {
-          console.log('Received remote audio from offer peer:', fromUserId);
-          
-          const remoteStream = event.streams[0];
-          remoteStreamsRef.current.set(fromUserId, remoteStream);
-
-          let audioElement = audioElementsRef.current.get(fromUserId);
-          if (!audioElement) {
-            audioElement = document.createElement('audio');
-            audioElement.autoplay = true;
-            audioElement.playsinline = true;
-            audioElementsRef.current.set(fromUserId, audioElement);
-          }
-          
-          audioElement.srcObject = remoteStream;
-          audioElement.muted = false;
-          try {
-            if (audioContainerRef.current && !audioContainerRef.current.contains(audioElement)) {
-              audioContainerRef.current.appendChild(audioElement);
-            }
-            audioElement.play?.().catch((err: any) => {
-              setNeedsAudioUnlock(true);
-              console.warn('Autoplay blocked, user interaction required:', err);
-            });
-          } catch {}
-        };
-
-        // Handle ICE candidates
-        peerConnection.onicecandidate = async (event) => {
-          if (event.candidate) {
-            try {
-              await supabase.from('webrtc_signals').insert({
-                room_id: roomId,
-                from_user_id: user?.id,
-                to_user_id: fromUserId,
-                signal_type: 'ice-candidate',
-                signal_data: event.candidate.toJSON(),
-              });
-            } catch (err) {
-              console.error('Error sending ICE candidate:', err);
-            }
-          }
-        };
-
-        // Handle connection state changes
-        peerConnection.onconnectionstatechange = () => {
-          console.log(`Connection state with ${fromUserId}:`, peerConnection!.connectionState);
-          
-          if (peerConnection!.connectionState === 'failed' || peerConnection!.connectionState === 'closed') {
-            closePeerConnection(fromUserId);
-          }
-        };
-
-        peerConnectionsRef.current.set(fromUserId, peerConnection);
-      }
-
-      // Set remote description and create answer
-      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-      
-      const answer = await peerConnection.createAnswer();
-      await peerConnection.setLocalDescription(answer);
-
-      try {
-        await supabase.from('webrtc_signals').insert({
-          room_id: roomId,
-          from_user_id: user?.id,
-          to_user_id: fromUserId,
-          signal_type: 'answer',
-          signal_data: answer,
-        });
-      } catch (err) {
-        console.error('Error sending answer:', err);
-      }
-
-      console.log('Sent answer to:', fromUserId);
-    } catch (err) {
-      console.error('Error handling offer:', err);
-    }
-  };
-
-  const handleAnswer = async (fromUserId: string, answer: RTCSessionDescriptionInit) => {
-    try {
-      const peerConnection = peerConnectionsRef.current.get(fromUserId);
-      
-      if (peerConnection) {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-        console.log('Set remote description (answer) from:', fromUserId);
-      }
-    } catch (err) {
-      console.error('Error handling answer:', err);
-    }
-  };
-
-  const handleIceCandidate = async (fromUserId: string, candidate: RTCIceCandidateInit) => {
-    try {
-      const peerConnection = peerConnectionsRef.current.get(fromUserId);
-      
-      if (peerConnection) {
-        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-      }
-    } catch (err) {
-      console.error('Error adding ICE candidate:', err);
-    }
-  };
-
-  const closePeerConnection = (userId: string) => {
-    const peerConnection = peerConnectionsRef.current.get(userId);
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnectionsRef.current.delete(userId);
-    }
-
-    const audioElement = audioElementsRef.current.get(userId);
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.srcObject = null;
-      audioElementsRef.current.delete(userId);
-    }
-
-    remoteStreamsRef.current.delete(userId);
-  };
-
   const handleCopyRoomCode = () => {
     if (room?.room_code) {
       navigator.clipboard.writeText(room.room_code);
@@ -675,22 +273,6 @@ export default function StudyRoom() {
         description: 'Room code copied to clipboard',
       });
     }
-  };
-
-  const enableAudioPlayback = () => {
-    let played = 0;
-    audioElementsRef.current.forEach((audio) => {
-      try {
-        audio.play?.().then(() => {
-          played += 1;
-        }).catch(() => {});
-      } catch {}
-    });
-    setNeedsAudioUnlock(false);
-    toast({
-      title: 'Audio Enabled',
-      description: played > 0 ? 'Remote audio is now playing' : 'Ready to play audio when available',
-    });
   };
 
   if (loading) {
@@ -728,7 +310,7 @@ export default function StudyRoom() {
       }}
     >
       {/* Hidden (but present) container to host remote audio elements */}
-      <div ref={audioContainerRef} className="absolute opacity-0 pointer-events-none h-0 w-0 -z-10" />
+      <div className="absolute opacity-0 pointer-events-none h-0 w-0 -z-10" />
       <div className={`flex items-center justify-between p-4 ${getGlassmorphismClasses()} shadow-lg`}>
         <div className="flex items-center gap-4">
           <Button
@@ -745,17 +327,6 @@ export default function StudyRoom() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {needsAudioUnlock && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={enableAudioPlayback}
-              className="bg-green-600 hover:bg-green-700"
-              title="Click once to allow audio"
-            >
-              Enable Audio
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -769,7 +340,6 @@ export default function StudyRoom() {
             onClick={handleLeaveRoom}
             className="gap-2 bg-red-500/80 hover:bg-red-600/80 text-white"
           >
-            <Phone className="h-4 w-4" />
             Leave
           </Button>
         </div>
@@ -780,29 +350,13 @@ export default function StudyRoom() {
         {/* Info Section */}
         <div className="flex-1 flex flex-col gap-4">
           <Card className={`flex-1 ${getGlassmorphismClasses()} shadow-lg`}>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Room Information</CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  size="lg"
-                  variant={isAudioOn ? 'default' : 'destructive'}
-                  onClick={handleToggleAudio}
-                  className={`rounded-full p-3 shadow-lg transition-all ${
-                    isAudioOn
-                      ? 'bg-green-500/80 hover:bg-green-600/80'
-                      : 'bg-red-500/80 hover:bg-red-600/80'
-                  }`}
-                  title={isAudioOn ? 'Mute microphone' : 'Unmute microphone'}
-                >
-                  {isAudioOn ? (
-                    <Mic className="h-5 w-5" />
-                  ) : (
-                    <MicOff className="h-5 w-5" />
-                  )}
-                </Button>
-              </div>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Video className="h-5 w-5" />
+                Video Conference
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               <div>
                 <h3 className="font-semibold text-sm text-muted-foreground mb-2">Description</h3>
                 <p className="text-base">{room.description || 'No description provided'}</p>
@@ -814,6 +368,19 @@ export default function StudyRoom() {
               <div>
                 <h3 className="font-semibold text-sm text-muted-foreground mb-2">Current Participants</h3>
                 <p className="text-base">{participants.length} / {room.max_participants}</p>
+              </div>
+              <div className="pt-4 border-t border-white/10">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Click the button below to join the video conference via MeetMesh
+                </p>
+                <Button
+                  onClick={() => window.open('https://meetmesh-delta.vercel.app/', '_blank')}
+                  className="w-full gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white py-6 text-lg"
+                >
+                  <Video className="h-5 w-5" />
+                  Join Video Conference
+                  <ExternalLink className="h-5 w-5" />
+                </Button>
               </div>
             </CardContent>
           </Card>
