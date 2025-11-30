@@ -43,42 +43,42 @@ export function ChangelogDialog() {
           <div className="space-y-3">
             <h3 className="font-semibold text-lg flex items-center gap-2">
               <Zap className="h-4 w-4 text-yellow-500" />
-              Latest Updates (v2.4)
+              Latest Updates (v2.5)
             </h3>
             <div className="space-y-2 ml-6">
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">12 Theme Options</p>
-                  <p className="text-sm text-muted-foreground">New themes: Default Dark, Forest Green, Sunset Orange, Mystical Purple, Midnight, Cherry Blossom, Solarized, Coffee, High Contrast, Autumn, Rose Gold, and Cyberpunk</p>
+                  <p className="font-medium">Collaborative Whiteboard</p>
+                  <p className="text-sm text-muted-foreground">Real-time drawing with pen, shapes, text tools, live cursors, and persistent storage</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">File Upload System</p>
-                  <p className="text-sm text-muted-foreground">Upload, download, and manage file attachments for Notes and Tasks with Supabase Storage integration</p>
+                  <p className="font-medium">Pomodoro Timer Redesign</p>
+                  <p className="text-sm text-muted-foreground">Beautiful circular ring design with animated progress, mode-specific colors, and enhanced UI</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Task Card Text Visibility</p>
-                  <p className="text-sm text-muted-foreground">Improved text contrast on task cards with white text on blue backgrounds</p>
+                  <p className="font-medium">Dynamic Island Enhancement</p>
+                  <p className="text-sm text-muted-foreground">Live clock, smart greeting, compact/expanded modes, notification badges, and smooth animations</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Rich Text Formatting</p>
-                  <p className="text-sm text-muted-foreground">Bold, italic, lists, headings, and code blocks in Notes & Tasks</p>
+                  <p className="font-medium">Whiteboard Admin Control</p>
+                  <p className="text-sm text-muted-foreground">Lock/unlock whiteboard access from admin panel with view-only mode for non-admins</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Enhanced Messaging</p>
-                  <p className="text-sm text-muted-foreground">Multiline messages, typing indicators, and offline notifications</p>
+                  <p className="font-medium">Mobile Optimizations</p>
+                  <p className="text-sm text-muted-foreground">Reduced animations and effects on mobile devices for better performance</p>
                 </div>
               </div>
             </div>
@@ -158,8 +158,8 @@ export function ChangelogDialog() {
 
           {/* Version Info */}
           <div className="pt-4 border-t text-sm text-muted-foreground">
-            <p><strong>Version:</strong> 2.3.0</p>
-            <p><strong>Last Updated:</strong> November 20, 2025</p>
+            <p><strong>Version:</strong> 2.5.0</p>
+            <p><strong>Last Updated:</strong> November 30, 2025</p>
             <p><strong>Status:</strong> Active Development</p>
           </div>
         </div>

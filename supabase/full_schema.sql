@@ -251,6 +251,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
   chat_locked BOOLEAN DEFAULT false NOT NULL,
   tasks_locked BOOLEAN DEFAULT false NOT NULL,
   study_rooms_locked BOOLEAN DEFAULT false NOT NULL,
+  whiteboard_locked BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );

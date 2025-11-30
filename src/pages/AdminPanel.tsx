@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, Unlock, AlertCircle, CheckCircle, Users } from 'lucide-react';
+import { Lock, Unlock, AlertCircle, CheckCircle, Users, PenTool } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface Settings {
@@ -17,6 +17,7 @@ interface Settings {
   chat_locked: boolean;
   tasks_locked: boolean;
   study_rooms_locked: boolean;
+  whiteboard_locked: boolean;
   updated_at: string;
 }
 
@@ -342,6 +343,31 @@ export default function AdminPanel() {
                 {settings.study_rooms_locked
                   ? 'Study rooms are locked for all users'
                   : 'All users can create and join study rooms'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <PenTool className="h-5 w-5" />
+                Whiteboard
+              </CardTitle>
+              <CardDescription>Lock/unlock collaborative whiteboard</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <span className="font-medium">Lock Whiteboard</span>
+                <Switch
+                  checked={settings.whiteboard_locked}
+                  onCheckedChange={(value) => updateSetting('whiteboard_locked', value)}
+                  disabled={loading}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {settings.whiteboard_locked
+                  ? 'Whiteboard is locked for all users'
+                  : 'All users can draw on the whiteboard'}
               </p>
             </CardContent>
           </Card>

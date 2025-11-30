@@ -1,4 +1,4 @@
-import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox, LogOut, Users, Video, Clock } from 'lucide-react';
+import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox, LogOut, Users, Video, Clock, PenTool } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
@@ -18,6 +18,7 @@ import { Button } from './ui/button';
 const items = [
   { title: 'Dashboard', url: '/', icon: Home },
   { title: 'Pomodoro Timer', url: '/pomodoro', icon: Clock },
+  { title: 'Whiteboard', url: '/whiteboard', icon: PenTool },
   { title: 'Notes', url: '/notes', icon: FileText },
   { title: 'Tasks', url: '/tasks', icon: CheckSquare },
   { title: 'Chat', url: '/chat', icon: MessageCircle },

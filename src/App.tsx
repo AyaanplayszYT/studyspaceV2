@@ -25,6 +25,7 @@ import PublicProfiles from "./pages/PublicProfiles";
 import StudyRooms from "./pages/StudyRooms";
 import StudyRoom from "./pages/StudyRoom";
 import PomodoroTimer from "./pages/PomodoroTimer";
+import Whiteboard from "./pages/Whiteboard";
 
 const queryClient = new QueryClient();
 
@@ -199,6 +200,16 @@ const App = () => {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <PomodoroTimer />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/whiteboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Whiteboard />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

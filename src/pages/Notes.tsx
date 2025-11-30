@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, FileText, Trash2, Bold, Italic, Underline, List, ChevronDown, Paperclip, X, Download, ClipboardCopy, Edit } from 'lucide-react';
+import { Plus, FileText, Trash2, Bold, Italic, Underline, List, ChevronDown, Paperclip, X, Download, ClipboardCopy, Edit, Filter, ArrowUpDown, BookOpen, Star, Download as DownloadIcon, CheckSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { uploadFile, deleteFile, getFileUrl, formatFileSize, getFileIcon, isImageFile, getImagePreview, MAX_UPLOAD_SIZE } from '@/lib/file-upload';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { NotesGridSkeleton } from '@/components/SkeletonLoaders';
 
 // Component to render formatted text
 const FormattedText = ({ text }: { text: string }) => {
@@ -102,6 +112,7 @@ const Notes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -124,8 +135,67 @@ const Notes = () => {
   const [filePreviews, setFilePreviews] = useState<{ [key: string]: string }>({});
   const [dragActive, setDragActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterBy, setFilterBy] = useState<'all' | 'my' | 'public'>('all');
+  const [sortBy, setSortBy] = useState<'created' | 'title' | 'subject'>('created');
+  const [selectedSubject, setSelectedSubject] = useState<string>('all');
+  const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
+  const [pinnedNotes, setPinnedNotes] = useState<Set<string>>(new Set());
   const contentRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Memoized filtered and sorted notes
+  const filteredAndSortedNotes = useMemo(() => {
+    let filtered = notes.filter(note => {
+      const matchesSearch = note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        note.subject?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesFilter = filterBy === 'all' ? true :
+        filterBy === 'my' ? note.user_id === user?.id :
+        note.is_public;
+      
+      const matchesSubject = selectedSubject === 'all' || note.subject === selectedSubject;
+      
+      return matchesSearch && matchesFilter && matchesSubject;
+    });
+
+    filtered.sort((a, b) => {
+      // Pinned notes always come first
+      const aPinned = pinnedNotes.has(a.id);
+      const bPinned = pinnedNotes.has(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      
+      // Then apply regular sorting
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === 'subject') {
+        return (a.subject || '').localeCompare(b.subject || '');
+      } else {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return filtered;
+  }, [notes, searchQuery, filterBy, sortBy, selectedSubject, user?.id, pinnedNotes]);
+
+  // Get unique subjects for filter
+  const uniqueSubjects = useMemo(() => {
+    const subjects = notes
+      .map(n => n.subject)
+      .filter((s): s is string => s !== null && s !== '');
+    return ['all', ...Array.from(new Set(subjects))];
+  }, [notes]);
+
+  // Stats calculation
+  const stats = useMemo(() => {
+    const total = notes.length;
+    const myNotes = notes.filter(n => n.user_id === user?.id).length;
+    const publicNotes = notes.filter(n => n.is_public).length;
+    const subjects = uniqueSubjects.length - 1; // Exclude 'all'
+    
+    return { total, myNotes, publicNotes, subjects };
+  }, [notes, uniqueSubjects, user?.id]);
 
   // Check if notes are locked and if user is admin
   useEffect(() => {
@@ -159,6 +229,119 @@ const Notes = () => {
       });
       fetchNotes();
     }
+  };
+
+  // Bulk actions for notes
+  const toggleNoteSelection = (noteId: string) => {
+    const newSelected = new Set(selectedNotes);
+    if (newSelected.has(noteId)) {
+      newSelected.delete(noteId);
+    } else {
+      newSelected.add(noteId);
+    }
+    setSelectedNotes(newSelected);
+  };
+
+  const selectAllNotes = () => {
+    if (selectedNotes.size === filteredAndSortedNotes.length) {
+      setSelectedNotes(new Set());
+    } else {
+      setSelectedNotes(new Set(filteredAndSortedNotes.map(n => n.id)));
+    }
+  };
+
+  const bulkDeleteNotes = async () => {
+    if (selectedNotes.size === 0) return;
+    
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .in('id', Array.from(selectedNotes));
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete notes',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: `${selectedNotes.size} note(s) deleted successfully`,
+      });
+      setSelectedNotes(new Set());
+      fetchNotes();
+    }
+  };
+
+  // Pin/Unpin notes
+  const togglePinNote = (noteId: string) => {
+    const newPinned = new Set(pinnedNotes);
+    if (newPinned.has(noteId)) {
+      newPinned.delete(noteId);
+      toast({ title: 'Note unpinned' });
+    } else {
+      newPinned.add(noteId);
+      toast({ title: 'Note pinned to top' });
+    }
+    setPinnedNotes(newPinned);
+    localStorage.setItem('pinnedNotes', JSON.stringify(Array.from(newPinned)));
+  };
+
+  // Export functionality
+  const exportNotesToMarkdown = () => {
+    let markdown = '# My Study Notes\n\n';
+    markdown += `Generated on ${new Date().toLocaleDateString()}\n\n`;
+    
+    filteredAndSortedNotes.forEach(note => {
+      markdown += `## ${note.title}\n\n`;
+      if (note.subject) {
+        markdown += `**Subject:** ${note.subject}\n\n`;
+      }
+      markdown += `${note.content}\n\n`;
+      markdown += `*By ${note.profiles.username} - ${note.is_public ? 'Public' : 'Private'}*\n\n`;
+      markdown += '---\n\n';
+    });
+    
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notes_${new Date().toISOString().split('T')[0]}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Exported!',
+      description: 'Notes exported as Markdown file',
+    });
+  };
+
+  const exportNotesToJSON = () => {
+    const data = {
+      exported: new Date().toISOString(),
+      notes: filteredAndSortedNotes.map(n => ({
+        title: n.title,
+        content: n.content,
+        subject: n.subject,
+        is_public: n.is_public,
+        author: n.profiles.username,
+        created_at: n.created_at,
+      })),
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `notes_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Exported!',
+      description: 'Notes exported as JSON file',
+    });
   };
 
   const openEditDialog = (note: Note) => {
@@ -412,7 +595,16 @@ const Notes = () => {
     }
   }, [selectedNote]);
 
+  // Load pinned notes from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('pinnedNotes');
+    if (saved) {
+      setPinnedNotes(new Set(JSON.parse(saved)));
+    }
+  }, []);
+
   const fetchNotes = async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from('notes')
       .select(`
@@ -424,6 +616,7 @@ const Notes = () => {
     if (!error && data) {
       setNotes(data);
     }
+    setLoading(false);
   };
 
   const handleCreateNote = async (e: React.FormEvent) => {
@@ -476,19 +669,52 @@ const Notes = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Study Notes</h1>
           <p className="text-muted-foreground">Share and discover study materials</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" disabled={notesLocked && !isAdmin} title={notesLocked && !isAdmin ? 'Notes are locked - only admins can create' : ''}>
-              <Plus className="h-4 w-4" />
-              Create Note
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div className="flex flex-wrap gap-2">
+          {selectedNotes.size > 0 && (
+            <>
+              <Badge variant="secondary" className="px-3 py-1">
+                {selectedNotes.size} selected
+              </Badge>
+              <Button 
+                size="sm" 
+                variant="destructive" 
+                onClick={bulkDeleteNotes}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </>
+          )}
+          <Select onValueChange={(value) => value === 'markdown' ? exportNotesToMarkdown() : exportNotesToJSON()}>
+            <SelectTrigger className="w-[140px]">
+              <DownloadIcon className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Export" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="markdown">Markdown</SelectItem>
+              <SelectItem value="json">JSON</SelectItem>
+            </SelectContent>
+          </Select>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2" disabled={notesLocked && !isAdmin} title={notesLocked && !isAdmin ? 'Notes are locked - only admins can create' : ''}>
+                <Plus className="h-4 w-4" />
+                Create Note
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Create Note Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Note</DialogTitle>
             </DialogHeader>
@@ -660,7 +886,6 @@ const Notes = () => {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
 
       {/* Edit Note Dialog */}
       <Dialog open={editOpen} onOpenChange={(open) => {
@@ -728,62 +953,145 @@ const Notes = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Search bar */}
-      <div className="space-y-2">
-        <Input
-          placeholder="Search notes by title, subject, or content..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full"
-        />
-      </div>
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              <Checkbox
+                checked={selectedNotes.size > 0 && selectedNotes.size === filteredAndSortedNotes.length}
+                onCheckedChange={selectAllNotes}
+                aria-label="Select all notes"
+              />
+              <span className="text-sm text-muted-foreground">
+                {selectedNotes.size === filteredAndSortedNotes.length && filteredAndSortedNotes.length > 0
+                  ? 'Deselect all'
+                  : 'Select all'}
+              </span>
+            </div>
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="flex-1">
+                <Input
+                  placeholder="Search notes by title, subject, or content..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search notes"
+                  className="w-full"
+                />
+              </div>
+              <Select value={filterBy} onValueChange={(v: any) => setFilterBy(v)}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Notes</SelectItem>
+                  <SelectItem value="my">My Notes</SelectItem>
+                  <SelectItem value="public">Public Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col md:flex-row gap-3">
+              <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {uniqueSubjects.map(subj => (
+                    <SelectItem key={subj} value={subj}>
+                      {subj === 'all' ? 'All Subjects' : subj}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                <SelectTrigger className="w-full md:w-[180px]">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created">Date Created</SelectItem>
+                  <SelectItem value="title">Alphabetical</SelectItem>
+                  <SelectItem value="subject">By Subject</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-full">
-        {notes
-          .filter((note) =>
-            note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            note.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            note.content.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .map((note) => (
-          <Card 
-            key={note.id} 
-            className="shadow-card hover:shadow-card-hover transition-smooth cursor-pointer group overflow-hidden max-w-full"
-            onClick={() => setSelectedNote(note)}
-          >
-            <CardHeader className="flex flex-col items-start justify-start gap-2 w-full overflow-hidden">
-              <div className="flex flex-row items-start justify-between gap-2 w-full overflow-hidden">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-accent flex-shrink-0" />
-                    <span className="break-words">{note.title}</span>
-                  </CardTitle>
-                  {note.subject && (
-                    <p className="text-sm text-muted-foreground break-words">{note.subject}</p>
-                  )}
-                </div>
-                {user?.id === note.user_id && (
-                  <div className="flex gap-2 flex-shrink-0">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        openEditDialog(note);
-                      }}
-                      aria-label="Edit Note"
-                      className="hover:bg-accent/20 hover:text-accent transition-colors"
-                    >
-                      <Edit className="h-5 w-5 text-accent" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteNote(note.id);
-                      }}
+      {loading ? (
+        <NotesGridSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-full">
+          {filteredAndSortedNotes.map((note) => (
+            <Card 
+              key={note.id} 
+              className={`shadow-card hover:shadow-card-hover transition-smooth cursor-pointer group overflow-hidden max-w-full ${
+                selectedNotes.has(note.id) ? 'ring-2 ring-accent' : ''
+              } ${pinnedNotes.has(note.id) ? 'border-t-4 border-t-yellow-500' : ''}`}
+              onClick={() => !selectedNotes.has(note.id) && setSelectedNote(note)}
+            >
+              <CardHeader className="flex flex-col items-start justify-start gap-2 w-full overflow-hidden">
+                <div className="flex flex-row items-start justify-between gap-2 w-full overflow-hidden">
+                  <div className="flex items-start gap-2 flex-1 min-w-0">
+                    <Checkbox
+                      checked={selectedNotes.has(note.id)}
+                      onCheckedChange={() => toggleNoteSelection(note.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      aria-label={`Select ${note.title}`}
+                      className="mt-1"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="flex items-center gap-2">
+                        {pinnedNotes.has(note.id) && (
+                          <Star className="h-4 w-4 fill-yellow-500 text-yellow-500 flex-shrink-0" />
+                        )}
+                        <FileText className="h-5 w-5 text-accent flex-shrink-0" />
+                        <span className="break-words">{note.title}</span>
+                      </CardTitle>
+                      {note.subject && (
+                        <Badge variant="outline" className="mt-1 text-xs">{note.subject}</Badge>
+                      )}
+                    </div>
+                  </div>
+                  {user?.id === note.user_id && (
+                    <div className="flex gap-2 flex-shrink-0">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          togglePinNote(note.id);
+                        }}
+                        aria-label={pinnedNotes.has(note.id) ? "Unpin note" : "Pin note"}
+                        className="hover:bg-yellow-500/20 transition-colors"
+                        title={pinnedNotes.has(note.id) ? "Unpin" : "Pin to top"}
+                      >
+                        <Star className={`h-4 w-4 ${pinnedNotes.has(note.id) ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          openEditDialog(note);
+                        }}
+                        aria-label="Edit Note"
+                        className="hover:bg-accent/20 hover:text-accent transition-colors"
+                      >
+                        <Edit className="h-5 w-5 text-accent" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteNote(note.id);
+                        }}
                       aria-label="Delete Note"
                     >
                       <Trash2 className="h-5 w-5 text-destructive" />
@@ -807,7 +1115,37 @@ const Notes = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
+
+      {!loading && filteredAndSortedNotes.length === 0 && notes.length > 0 && (
+        <Card className="shadow-card">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No notes match your filters</p>
+            <Button 
+              variant="ghost" 
+              onClick={() => { 
+                setSearchQuery(''); 
+                setFilterBy('all'); 
+                setSelectedSubject('all'); 
+              }} 
+              className="mt-4"
+            >
+              Clear Filters
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && notes.length === 0 && (
+        <Card className="shadow-card">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No notes yet. Create your first one!</p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Detail View Dialog */}
       <Dialog open={selectedNote !== null} onOpenChange={(open) => !open && setSelectedNote(null)}>

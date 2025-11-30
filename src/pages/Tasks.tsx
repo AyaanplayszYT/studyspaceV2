@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, CheckCircle2, Circle, Trash2, Bold, Italic, Underline, List, Paperclip, X, Download, Edit } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Trash2, Bold, Italic, Underline, List, Paperclip, X, Download, Edit, Filter, ArrowUpDown, Star, Download as DownloadIcon, CheckSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { uploadFile, deleteFile, getFileUrl, formatFileSize, getFileIcon, isImageFile, getImagePreview } from '@/lib/file-upload';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { TasksGridSkeleton } from '@/components/SkeletonLoaders';
 
 interface Task {
   id: string;
@@ -54,6 +64,7 @@ const TaskDescription = ({ content }: { content: string }) => {
 const Tasks = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -69,9 +80,60 @@ const Tasks = () => {
   const [dragActive, setDragActive] = useState(false);
   const [expandedTask, setExpandedTask] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed'>('all');
+  const [sortBy, setSortBy] = useState<'created' | 'due' | 'title'>('created');
+  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [pinnedTasks, setPinnedTasks] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Memoized filtered and sorted tasks for better performance
+  const filteredAndSortedTasks = useMemo(() => {
+    let filtered = tasks.filter(task => {
+      const matchesSearch = task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        task.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = filterStatus === 'all' ? true :
+        filterStatus === 'completed' ? task.completed : !task.completed;
+      
+      return matchesSearch && matchesStatus;
+    });
+
+    filtered.sort((a, b) => {
+      // Pinned tasks always come first
+      const aPinned = pinnedTasks.has(a.id);
+      const bPinned = pinnedTasks.has(b.id);
+      if (aPinned && !bPinned) return -1;
+      if (!aPinned && bPinned) return 1;
+      
+      // Then apply regular sorting
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      } else if (sortBy === 'due') {
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      } else {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+    return filtered;
+  }, [tasks, searchQuery, filterStatus, sortBy, pinnedTasks]);
+
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const total = tasks.length;
+    const completed = tasks.filter(t => t.completed).length;
+    const active = total - completed;
+    const overdue = tasks.filter(t => 
+      !t.completed && t.due_date && new Date(t.due_date) < new Date()
+    ).length;
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    
+    return { total, completed, active, overdue, completionRate };
+  }, [tasks]);
 
   // Check if tasks are locked and if user is admin
   useEffect(() => {
@@ -249,7 +311,16 @@ const Tasks = () => {
     fetchTasks();
   }, [user]);
 
+  // Load pinned tasks from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('pinnedTasks');
+    if (saved) {
+      setPinnedTasks(new Set(JSON.parse(saved)));
+    }
+  }, []);
+
   const fetchTasks = async () => {
+    setLoading(true);
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
@@ -268,6 +339,7 @@ const Tasks = () => {
         }
       }
     }
+    setLoading(false);
   };
 
   const handleCreateTask = async (e: React.FormEvent) => {
@@ -392,21 +464,203 @@ const Tasks = () => {
     }
   };
 
+  // Bulk actions
+  const toggleTaskSelection = (taskId: string) => {
+    const newSelected = new Set(selectedTasks);
+    if (newSelected.has(taskId)) {
+      newSelected.delete(taskId);
+    } else {
+      newSelected.add(taskId);
+    }
+    setSelectedTasks(newSelected);
+  };
+
+  const selectAllTasks = () => {
+    if (selectedTasks.size === filteredAndSortedTasks.length) {
+      setSelectedTasks(new Set());
+    } else {
+      setSelectedTasks(new Set(filteredAndSortedTasks.map(t => t.id)));
+    }
+  };
+
+  const bulkDeleteTasks = async () => {
+    if (selectedTasks.size === 0) return;
+    
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .in('id', Array.from(selectedTasks));
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete tasks',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: `${selectedTasks.size} task(s) deleted successfully`,
+      });
+      setSelectedTasks(new Set());
+      fetchTasks();
+    }
+  };
+
+  const bulkToggleComplete = async () => {
+    if (selectedTasks.size === 0) return;
+    
+    const tasksToUpdate = tasks.filter(t => selectedTasks.has(t.id));
+    const allCompleted = tasksToUpdate.every(t => t.completed);
+    
+    const { error } = await supabase
+      .from('tasks')
+      .update({ completed: !allCompleted })
+      .in('id', Array.from(selectedTasks));
+    
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update tasks',
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Success',
+        description: `${selectedTasks.size} task(s) ${allCompleted ? 'marked as incomplete' : 'completed'}`,
+      });
+      setSelectedTasks(new Set());
+      fetchTasks();
+    }
+  };
+
+  // Pin/Unpin tasks
+  const togglePin = (taskId: string) => {
+    const newPinned = new Set(pinnedTasks);
+    if (newPinned.has(taskId)) {
+      newPinned.delete(taskId);
+      toast({ title: 'Task unpinned' });
+    } else {
+      newPinned.add(taskId);
+      toast({ title: 'Task pinned to top' });
+    }
+    setPinnedTasks(newPinned);
+    localStorage.setItem('pinnedTasks', JSON.stringify(Array.from(newPinned)));
+  };
+
+  // Export functionality
+  const exportToMarkdown = () => {
+    let markdown = '# My Tasks\n\n';
+    markdown += `Generated on ${new Date().toLocaleDateString()}\n\n`;
+    
+    filteredAndSortedTasks.forEach(task => {
+      markdown += `## ${task.completed ? '[x]' : '[ ]'} ${task.title}\n\n`;
+      if (task.description) {
+        markdown += `${task.description}\n\n`;
+      }
+      if (task.due_date) {
+        markdown += `**Due:** ${new Date(task.due_date).toLocaleString()}\n\n`;
+      }
+      markdown += '---\n\n';
+    });
+    
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks_${new Date().toISOString().split('T')[0]}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Exported!',
+      description: 'Tasks exported as Markdown file',
+    });
+  };
+
+  const exportToJSON = () => {
+    const data = {
+      exported: new Date().toISOString(),
+      tasks: filteredAndSortedTasks.map(t => ({
+        title: t.title,
+        description: t.description,
+        completed: t.completed,
+        due_date: t.due_date,
+        created_at: t.created_at,
+      })),
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Exported!',
+      description: 'Tasks exported as JSON file',
+    });
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Tasks</h1>
           <p className="text-muted-foreground">Track your assignments and deadlines</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2" disabled={tasksLocked && !isAdmin} title={tasksLocked && !isAdmin ? 'Tasks are locked - only admins can create' : ''}>
-              <Plus className="h-4 w-4" />
-              Create Task
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
+        <div className="flex flex-wrap gap-2">
+          {selectedTasks.size > 0 && (
+            <>
+              <Badge variant="secondary" className="px-3 py-1">
+                {selectedTasks.size} selected
+              </Badge>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={bulkToggleComplete}
+                className="gap-2"
+              >
+                <CheckSquare className="h-4 w-4" />
+                Toggle Complete
+              </Button>
+              <Button 
+                size="sm" 
+                variant="destructive" 
+                onClick={bulkDeleteTasks}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            </>
+          )}
+          <Select onValueChange={(value) => value === 'markdown' ? exportToMarkdown() : exportToJSON()}>
+            <SelectTrigger className="w-[140px]">
+              <DownloadIcon className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Export" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="markdown">Markdown</SelectItem>
+              <SelectItem value="json">JSON</SelectItem>
+            </SelectContent>
+          </Select>
+          <Dialog open={open} onValueChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2" disabled={tasksLocked && !isAdmin} title={tasksLocked && !isAdmin ? 'Tasks are locked - only admins can create' : ''}>
+                <Plus className="h-4 w-4" />
+                Create Task
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Create Task Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Task</DialogTitle>
               <p className="text-sm text-muted-foreground">Add a new task to your list. All fields except title are optional.</p>
@@ -561,7 +815,6 @@ const Tasks = () => {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
 
       {/* Edit Task Dialog */}
       <Dialog open={editOpen} onOpenChange={(open) => {
@@ -631,34 +884,95 @@ const Tasks = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Search Bar */}
-      <div className="space-y-2">
-        <Input
-          placeholder="Search tasks by title, description..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full"
-        />
-      </div>
-
-      <div className="space-y-3">
-        {tasks
-          .filter(task => 
-            task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            task.description?.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-          .map((task) => (
-          <Card key={task.id} className="shadow-card hover:shadow-card-hover transition-smooth">
-            <CardContent className="flex items-start gap-4 pt-6">
+      {/* Filters and Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-3">
               <Checkbox
-                checked={task.completed}
-                onCheckedChange={() => toggleTask(task.id, task.completed)}
-                className="mt-1"
+                checked={selectedTasks.size > 0 && selectedTasks.size === filteredAndSortedTasks.length}
+                onCheckedChange={selectAllTasks}
+                aria-label="Select all tasks"
               />
+              <span className="text-sm text-muted-foreground">
+                {selectedTasks.size === filteredAndSortedTasks.length && filteredAndSortedTasks.length > 0
+                  ? 'Deselect all'
+                  : 'Select all'}
+              </span>
+            </div>
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1">
-                <h3 className={`font-semibold text-white ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
-                  {task.title}
-                </h3>
+                <Input
+                  placeholder="Search tasks by title, description..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  aria-label="Search tasks"
+                  className="w-full"
+                />
+              </div>
+            <Select value={filterStatus} onValueChange={(v: any) => setFilterStatus(v)}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tasks</SelectItem>
+                <SelectItem value="active">Active Only</SelectItem>
+                <SelectItem value="completed">Completed Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+              <SelectTrigger className="w-full md:w-[180px]">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="created">Date Created</SelectItem>
+                <SelectItem value="due">Due Date</SelectItem>
+                <SelectItem value="title">Alphabetical</SelectItem>
+              </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>      {loading ? (
+        <TasksGridSkeleton />
+      ) : (
+        <div className="space-y-3">
+          {filteredAndSortedTasks.map((task) => (
+            <Card 
+              key={task.id} 
+              className={`shadow-card hover:shadow-card-hover transition-smooth ${
+                selectedTasks.has(task.id) ? 'ring-2 ring-accent' : ''
+              } ${pinnedTasks.has(task.id) ? 'border-l-4 border-l-yellow-500' : ''}`}
+            >
+              <CardContent className="flex items-start gap-4 pt-6">
+                <div className="flex flex-col gap-2">
+                  <Checkbox
+                    checked={selectedTasks.has(task.id)}
+                    onCheckedChange={() => toggleTaskSelection(task.id)}
+                    aria-label={`Select ${task.title}`}
+                    className="mt-1"
+                  />
+                  <Checkbox
+                    checked={task.completed}
+                    onCheckedChange={() => toggleTask(task.id, task.completed)}
+                    aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
+                    className="mt-1"
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    {pinnedTasks.has(task.id) && (
+                      <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                    )}
+                    <h3 className={`font-semibold text-white ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                      {task.title}
+                    </h3>
+                    {task.due_date && new Date(task.due_date) < new Date() && !task.completed && (
+                      <Badge variant="destructive" className="text-xs">Overdue</Badge>
+                    )}
+                  </div>
                 {task.description && (
                   <div className="text-sm text-white/80 mt-1">
                     <TaskDescription content={task.description} />
@@ -708,6 +1022,16 @@ const Tasks = () => {
                   <Button
                     size="icon"
                     variant="ghost"
+                    onClick={() => togglePin(task.id)}
+                    aria-label={pinnedTasks.has(task.id) ? "Unpin task" : "Pin task"}
+                    className="hover:bg-yellow-500/20 transition-colors"
+                    title={pinnedTasks.has(task.id) ? "Unpin" : "Pin to top"}
+                  >
+                    <Star className={`h-5 w-5 ${pinnedTasks.has(task.id) ? 'fill-yellow-500 text-yellow-500' : 'text-muted-foreground'}`} />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     onClick={() => openEditDialog(task)}
                     aria-label="Edit Task"
                     className="hover:bg-accent/20 hover:text-accent transition-colors"
@@ -732,9 +1056,22 @@ const Tasks = () => {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
-      {tasks.length === 0 && (
+      {!loading && filteredAndSortedTasks.length === 0 && tasks.length > 0 && (
+        <Card className="shadow-card">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Filter className="h-12 w-12 text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No tasks match your filters</p>
+            <Button variant="ghost" onClick={() => { setSearchQuery(''); setFilterStatus('all'); }} className="mt-4">
+              Clear Filters
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!loading && tasks.length === 0 && (
         <Card className="shadow-card">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <CheckCircle2 className="h-12 w-12 text-muted-foreground mb-4" />

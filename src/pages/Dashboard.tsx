@@ -170,6 +170,15 @@ const Dashboard = () => {
               </p>
             </Link>
             <Link
+              to="/whiteboard"
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
+            >
+              <h3 className="font-semibold mb-1">Collaborative Whiteboard</h3>
+              <p className="text-sm text-muted-foreground">
+                Draw and brainstorm together in real-time
+              </p>
+            </Link>
+            <Link
               to="/notes"
               className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >

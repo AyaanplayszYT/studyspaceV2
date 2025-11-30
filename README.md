@@ -4,7 +4,48 @@
 
 ---
 
-## 🚀 Recent Updates (v2.3)
+## 🚀 Recent Updates (v2.5)
+
+### Collaborative Whiteboard
+✅ **Real-time Drawing** - Draw together with multiple users in real-time  
+✅ **Drawing Tools** - Pen, eraser, shapes (rectangle, circle, line), text, and pan tools  
+✅ **Color Palette** - 10 colors to choose from (black, white, primary colors)  
+✅ **Brush Sizes** - Adjustable line width from 1-50 pixels  
+✅ **Live Cursors** - See where other users are drawing with color-coded cursors  
+✅ **Room System** - Join different whiteboard rooms for separate projects  
+✅ **Undo/Clear** - Undo your last action or clear the entire board  
+✅ **Download** - Save whiteboard as PNG image  
+✅ **Admin Lock** - Admins can lock/unlock whiteboard access  
+✅ **Persistent Storage** - All drawings saved to Supabase with real-time sync  
+
+### Pomodoro Timer Redesign
+✅ **Circular Ring Design** - Beautiful animated progress ring showing time remaining  
+✅ **Visual Modes** - Different colors for Focus (blue), Break (green), Long Break (purple)  
+✅ **Mode Icons** - Brain icon for focus, coffee for breaks, clock for long breaks  
+✅ **Session Dots** - Visual indicators for completed sessions  
+✅ **Gradient Effects** - Modern gradients and glow effects on buttons  
+✅ **Enhanced Settings** - Better organized settings panel with icons  
+✅ **Mobile Responsive** - Fully optimized for all screen sizes  
+
+### Dynamic Island Enhancement
+✅ **Compact Mode** - Shows current page icon, time, and notifications  
+✅ **Expanded Mode** - Reveals full navigation with smooth animations  
+✅ **Live Clock** - Updates every minute with current time  
+✅ **Smart Greeting** - Shows "Good Morning/Afternoon/Evening" based on time  
+✅ **Notification Counter** - Shows unread notifications with pulsing badge  
+✅ **Staggered Animations** - Items slide in sequentially for smooth effect  
+✅ **Tooltips** - Hover to see page names on desktop  
+✅ **Ambient Glow** - Subtle glow effect when expanded  
+✅ **Mobile Optimized** - Reduced effects on mobile for better performance  
+
+### Admin Panel Updates
+✅ **Whiteboard Lock Control** - Lock/unlock whiteboard for all users  
+✅ **Consistent UI** - Matches other admin controls  
+✅ **Clear Status** - Visual feedback for lock state  
+
+---
+
+## 🚀 Previous Updates (v2.3)
 
 ### File Upload System for Notes & Tasks
 ✅ **Upload Attachments** - Attach files to notes and tasks for better organization  
@@ -193,6 +234,6 @@ MIT
 
 ---
 
-**Last Updated:** November 20, 2025  
-**Version:** 2.3.0  
+**Last Updated:** November 30, 2025  
+**Version:** 2.5.0  
 **Status:** Active Development
