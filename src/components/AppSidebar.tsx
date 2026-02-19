@@ -1,7 +1,9 @@
-import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox, LogOut, Users, Video, Clock, PenTool, Settings as SettingsIcon, UserCircle } from 'lucide-react';
+import { Home, FileText, CheckSquare, MessageCircle, Trophy, Inbox, LogOut, Users, Video, Clock, PenTool, Settings as SettingsIcon, UserCircle, ClipboardList, Shield } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from './AuthProvider';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +23,7 @@ const items = [
   { title: 'Whiteboard', url: '/whiteboard', icon: PenTool },
   { title: 'Notes', url: '/notes', icon: FileText },
   { title: 'Tasks', url: '/tasks', icon: CheckSquare },
+  { title: 'Test Catalogue', url: '/tests/catalogue', icon: ClipboardList },
   { title: 'Chat', url: '/chat', icon: MessageCircle },
   { title: 'Direct Messages', url: '/dms', icon: MessageCircle },
   { title: 'Find Users', url: '/users', icon: Users },
@@ -37,8 +40,22 @@ const profileItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const currentPath = location.pathname;
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', user.id)
+        .single();
+      setIsAdmin(data?.is_admin || false);
+    };
+    checkAdmin();
+  }, [user]);
 
   const isActive = (path: string) => currentPath === path;
   const collapsed = state === 'collapsed';
@@ -75,6 +92,42 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>Teacher Tools</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/tests"
+                      end
+                      className="hover:bg-sidebar-accent transition-smooth"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      {!collapsed && <span>Tests & Assignments</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/admin"
+                      end
+                      className="hover:bg-sidebar-accent transition-smooth"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                    >
+                      <Shield className="h-4 w-4" />
+                      {!collapsed && <span>Admin Panel</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>Account</SidebarGroupLabel>

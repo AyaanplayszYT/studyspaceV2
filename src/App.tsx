@@ -27,6 +27,11 @@ import StudyRooms from "./pages/StudyRooms";
 import StudyRoom from "./pages/StudyRoom";
 import PomodoroTimer from "./pages/PomodoroTimer";
 import Whiteboard from "./pages/Whiteboard";
+import TestsManagement from "./pages/TestsManagement_NEW";
+import TestCreation from "./pages/TestCreation_NEW";
+import TakeTest from "./pages/TakeTest_NEW";
+import TestReports from "./pages/TestReports_NEW";
+import StudentTests from "./pages/StudentTests_NEW";
 
 const queryClient = new QueryClient();
 
@@ -221,6 +226,66 @@ const App = () => {
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Whiteboard />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tests"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <TestsManagement />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tests/catalogue"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <StudentTests />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tests/create"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <TestCreation />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tests/edit/:testId"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <TestCreation />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tests/take/:testId"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <TakeTest />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tests/reports/:testId"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <TestReports />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Flame, Trophy, Target, TrendingUp, LogOut, Settings, Clock } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import AvailableTests from '@/components/AvailableTests';
 
 const GREETINGS = [
   'Ready to crush your study goals today?',
@@ -36,6 +37,7 @@ interface ProfileData {
   streak: number;
   points: number;
   rank: number;
+  is_admin?: boolean;
 }
 
 const Dashboard = () => {
@@ -45,6 +47,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     setGreeting(GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
@@ -56,12 +59,13 @@ const Dashboard = () => {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, streak, points, rank')
+        .select('username, streak, points, rank, is_admin')
         .eq('id', user.id)
         .single();
 
       if (!error && data) {
         setProfile(data);
+        setIsAdmin(data.is_admin || false);
       }
       setLoading(false);
     };
@@ -151,6 +155,9 @@ const Dashboard = () => {
         </Card>
       </div>
 
+      {/* Available Tests Section */}
+      <AvailableTests />
+
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -197,6 +204,19 @@ const Dashboard = () => {
               </p>
             </Link>
             <Link
+              to={isAdmin ? "/tests" : "/tests/catalogue"}
+              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
+            >
+              <h3 className="font-semibold mb-1">
+                {isAdmin ? 'Manage Tests' : 'Test Catalogue'}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {isAdmin 
+                  ? 'Create and manage assignments & tests'
+                  : 'Browse and complete your assignments'}
+              </p>
+            </Link>
+            <Link
               to="/chat"
               className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
@@ -224,15 +244,6 @@ const Dashboard = () => {
               </p>
             </Link>
             <Link
-              to="/admin"
-              className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
-            >
-              <h3 className="font-semibold mb-1">Admin Panel</h3>
-              <p className="text-sm text-muted-foreground">
-                Access admin features and controls
-              </p>
-            </Link>
-            <Link
               to="/ai-chat"
               className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
             >
@@ -241,6 +252,17 @@ const Dashboard = () => {
                 Chat with an AI assistant
               </p>
             </Link>
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="p-4 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-smooth"
+              >
+                <h3 className="font-semibold mb-1">Admin Panel</h3>
+                <p className="text-sm text-muted-foreground">
+                  Access admin features and controls
+                </p>
+              </Link>
+            )}
           </div>
         </CardContent>
       </Card>

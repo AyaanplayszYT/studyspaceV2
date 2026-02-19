@@ -266,6 +266,211 @@ export type Database = {
           },
         ]
       }
+      tests: {
+        Row: {
+          id: string
+          teacher_id: string
+          title: string
+          description: string | null
+          subject: string | null
+          total_points: number
+          time_limit: number | null
+          due_date: string | null
+          is_published: boolean
+          allow_late_submission: boolean
+          show_results_immediately: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          teacher_id: string
+          title: string
+          description?: string | null
+          subject?: string | null
+          total_points?: number
+          time_limit?: number | null
+          due_date?: string | null
+          is_published?: boolean
+          allow_late_submission?: boolean
+          show_results_immediately?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          teacher_id?: string
+          title?: string
+          description?: string | null
+          subject?: string | null
+          total_points?: number
+          time_limit?: number | null
+          due_date?: string | null
+          is_published?: boolean
+          allow_late_submission?: boolean
+          show_results_immediately?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tests_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_questions: {
+        Row: {
+          id: string
+          test_id: string
+          question_order: number
+          question_type: string
+          question_text: string
+          question_image_url: string | null
+          points: number
+          correct_answer: string | null
+          options: Json | null
+          explanation: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          test_id: string
+          question_order: number
+          question_type: string
+          question_text: string
+          question_image_url?: string | null
+          points?: number
+          correct_answer?: string | null
+          options?: Json | null
+          explanation?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          test_id?: string
+          question_order?: number
+          question_type?: string
+          question_text?: string
+          question_image_url?: string | null
+          points?: number
+          correct_answer?: string | null
+          options?: Json | null
+          explanation?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_submissions: {
+        Row: {
+          id: string
+          test_id: string
+          student_id: string
+          started_at: string
+          submitted_at: string | null
+          score: number | null
+          total_points: number | null
+          is_graded: boolean
+          time_taken: number | null
+        }
+        Insert: {
+          id?: string
+          test_id: string
+          student_id: string
+          started_at?: string
+          submitted_at?: string | null
+          score?: number | null
+          total_points?: number | null
+          is_graded?: boolean
+          time_taken?: number | null
+        }
+        Update: {
+          id?: string
+          test_id?: string
+          student_id?: string
+          started_at?: string
+          submitted_at?: string | null
+          score?: number | null
+          total_points?: number | null
+          is_graded?: boolean
+          time_taken?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_submissions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_answers: {
+        Row: {
+          id: string
+          submission_id: string
+          question_id: string
+          answer_text: string | null
+          is_correct: boolean | null
+          points_earned: number | null
+          teacher_feedback: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          submission_id: string
+          question_id: string
+          answer_text?: string | null
+          is_correct?: boolean | null
+          points_earned?: number | null
+          teacher_feedback?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          submission_id?: string
+          question_id?: string
+          answer_text?: string | null
+          is_correct?: boolean | null
+          points_earned?: number | null
+          teacher_feedback?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
