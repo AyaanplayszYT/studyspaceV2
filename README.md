@@ -180,10 +180,6 @@ The schema creates:
 - Verify OpenRouter API key
 - Check account has credits
 
-**"Video not working"**
-- Allow camera/mic permissions in browser
-- Use Chrome or Edge
-
 ---
 
 ## Costs
@@ -202,7 +198,7 @@ The schema creates:
 
 ## Requirements
 
-- Node.js 16+
+- Node.js 18+
 - Supabase account (free tier works)
 - OpenRouter account (free tier works)
 
