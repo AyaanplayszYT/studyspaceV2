@@ -63,6 +63,49 @@ CREATE POLICY "Users can delete own notes"
   ON public.notes FOR DELETE
   USING (auth.uid() = user_id);
 
+-- NOTE ATTACHMENTS TABLE
+CREATE TABLE IF NOT EXISTS public.note_attachments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  note_id UUID REFERENCES public.notes(id) ON DELETE CASCADE NOT NULL,
+  file_name TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  file_size INTEGER,
+  file_type TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+ALTER TABLE public.note_attachments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view attachments for notes they can access"
+  ON public.note_attachments FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.notes
+      WHERE notes.id = note_attachments.note_id
+      AND (notes.is_public = true OR notes.user_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Users can create attachments for own notes"
+  ON public.note_attachments FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.notes
+      WHERE notes.id = note_attachments.note_id
+      AND notes.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete attachments from own notes"
+  ON public.note_attachments FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.notes
+      WHERE notes.id = note_attachments.note_id
+      AND notes.user_id = auth.uid()
+    )
+  );
+
 -- TASKS TABLE
 CREATE TABLE IF NOT EXISTS public.tasks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -92,6 +135,43 @@ CREATE POLICY "Users can update own tasks"
 CREATE POLICY "Users can delete own tasks"
   ON public.tasks FOR DELETE
   USING (auth.uid() = user_id);
+
+-- TASK ATTACHMENTS TABLE
+CREATE TABLE IF NOT EXISTS public.task_attachments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id UUID REFERENCES public.tasks(id) ON DELETE CASCADE NOT NULL,
+  file_name TEXT NOT NULL,
+  file_url TEXT NOT NULL,
+  file_size INTEGER,
+  file_type TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+ALTER TABLE public.task_attachments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view task attachments"
+  ON public.task_attachments FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can create attachments for own tasks"
+  ON public.task_attachments FOR INSERT
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.tasks
+      WHERE tasks.id = task_attachments.task_id
+      AND tasks.user_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete attachments from own tasks"
+  ON public.task_attachments FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.tasks
+      WHERE tasks.id = task_attachments.task_id
+      AND tasks.user_id = auth.uid()
+    )
+  );
 
 -- FRIENDSHIPS TABLE
 CREATE TABLE IF NOT EXISTS public.friendships (
@@ -777,3 +857,130 @@ CREATE TRIGGER calculate_score_trigger
   FOR EACH ROW
   EXECUTE FUNCTION public.calculate_submission_score();
 
+
+-- ============================================================================
+-- WHITEBOARD SYSTEM
+-- ============================================================================
+
+-- Whiteboard Actions Table
+CREATE TABLE IF NOT EXISTS public.whiteboard_actions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  room_id TEXT NOT NULL,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  username TEXT NOT NULL,
+  tool TEXT NOT NULL CHECK (tool IN ('pen', 'eraser', 'rectangle', 'circle', 'line', 'text', 'pan')),
+  color TEXT NOT NULL,
+  line_width INTEGER NOT NULL,
+  points JSONB NOT NULL,
+  text TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_whiteboard_room_id ON public.whiteboard_actions(room_id);
+CREATE INDEX IF NOT EXISTS idx_whiteboard_created_at ON public.whiteboard_actions(created_at);
+CREATE INDEX IF NOT EXISTS idx_whiteboard_user_id ON public.whiteboard_actions(user_id);
+
+ALTER TABLE public.whiteboard_actions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view whiteboard actions in their room"
+  ON public.whiteboard_actions FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can insert their own whiteboard actions"
+  ON public.whiteboard_actions FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own whiteboard actions"
+  ON public.whiteboard_actions FOR DELETE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can delete any whiteboard action"
+  ON public.whiteboard_actions FOR DELETE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.profiles
+      WHERE profiles.id = auth.uid()
+      AND profiles.is_admin = true
+    )
+  );
+
+-- ============================================================================
+-- STORAGE BUCKETS FOR FILE UPLOADS
+-- ============================================================================
+
+-- Create storage bucket for note attachments
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'note-attachments',
+  'note-attachments',
+  false,
+  10485760, -- 10MB limit
+  NULL -- Allow all file types
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Create storage bucket for task attachments
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'task-attachments',
+  'task-attachments',
+  false,
+  10485760, -- 10MB limit
+  NULL -- Allow all file types
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for note-attachments
+CREATE POLICY "Authenticated users can read note files"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'note-attachments' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Users can upload note files"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'note-attachments' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can delete own note files"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'note-attachments' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- Storage policies for task-attachments
+CREATE POLICY "Authenticated users can read task files"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'task-attachments' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Users can upload task files"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'task-attachments' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can delete own task files"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'task-attachments' AND
+    auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- ============================================================================
+-- ADDITIONAL INDEXES FOR PERFORMANCE
+-- ============================================================================
+
+CREATE INDEX IF NOT EXISTS idx_note_attachments_note_id ON public.note_attachments(note_id);
+CREATE INDEX IF NOT EXISTS idx_task_attachments_task_id ON public.task_attachments(task_id);
+
+-- ============================================================================
+-- COMPLETE!
+-- ============================================================================
+-- Your StudySpace V2 database is now fully configured.
+-- Next steps:
+-- 1. Create your first user account via the application
+-- 2. Make yourself admin using: UPDATE public.profiles SET is_admin = true WHERE id = 'your-user-id';
+-- 3. Start using all the features!
+-- ============================================================================

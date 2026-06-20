@@ -6,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquarePlus, MessageCircle, LogOut, Trash2 } from 'lucide-react';
+import { MessageSquarePlus, MessageCircle, Trash2, Search, Users } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,10 +31,11 @@ interface Conversation {
 }
 
 export default function DMList() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -116,106 +119,143 @@ export default function DMList() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return 'now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
+  const filteredConversations = conversations.filter(conv =>
+    conv.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    conv.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="max-w-2xl mx-auto py-8">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <MessageCircle className="h-5 w-5" />
-                Direct Messages
-              </CardTitle>
-              <CardDescription>Connect with other students</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => navigate('/users')} size="sm">
-                <MessageSquarePlus className="h-4 w-4 mr-2" />
-                New Message
-              </Button>
-              <Button onClick={signOut} variant="outline" size="sm">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+    <div className="container max-w-5xl mx-auto py-6 px-4">
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <MessageCircle className="h-8 w-8" />
+              Messages
+            </h1>
+            <p className="text-muted-foreground mt-1">Connect with your study partners</p>
           </div>
-        </CardHeader>
-        <CardContent>
+          <Button onClick={() => navigate('/users')} size="lg" className="gap-2">
+            <MessageSquarePlus className="h-5 w-5" />
+            New Chat
+          </Button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
           {loading ? (
-            <p className="text-muted-foreground text-center py-8">Loading conversations...</p>
-          ) : conversations.length === 0 ? (
-            <div className="text-center py-8">
-              <MessageCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">No conversations yet.</p>
-              <Button onClick={() => navigate('/users')}>Find Users to Chat With</Button>
+            <div className="flex items-center justify-center py-16">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+                <p className="text-muted-foreground">Loading conversations...</p>
+              </div>
+            </div>
+          ) : filteredConversations.length === 0 ? (
+            <div className="text-center py-16 px-4">
+              {conversations.length === 0 ? (
+                <>
+                  <MessageCircle className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-30" />
+                  <h3 className="text-lg font-semibold mb-2">No conversations yet</h3>
+                  <p className="text-muted-foreground mb-6">Start a conversation by finding users to chat with</p>
+                  <Button onClick={() => navigate('/users')} size="lg" className="gap-2">
+                    <Users className="h-5 w-5" />
+                    Discover Users
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Search className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-30" />
+                  <h3 className="text-lg font-semibold mb-2">No results found</h3>
+                  <p className="text-muted-foreground">Try searching with a different name or email</p>
+                </>
+              )}
             </div>
           ) : (
-            <div className="space-y-2">
-              {conversations.map((conversation) => (
+            <div className="divide-y divide-border">
+              {filteredConversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  className="p-3 rounded-lg border border-border hover:bg-accent/50 transition-colors group flex justify-between items-start"
+                  className="group hover:bg-accent/50 transition-all duration-200"
                 >
-                  <Link
-                    to={`/dms/${conversation.id}`}
-                    className="flex-1 flex items-start gap-3"
-                  >
-                    <Avatar className="w-10 h-10 flex-shrink-0 mt-1">
-                      <AvatarImage src={conversation.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
-                        {conversation.username.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-semibold truncate">{conversation.username}</h3>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap ml-2">
-                          {formatTime(conversation.lastMessageTime)}
-                        </span>
+                  <div className="flex items-center gap-4 p-4">
+                    <Link
+                      to={`/dms/${conversation.id}`}
+                      className="flex-1 flex items-center gap-4 min-w-0"
+                    >
+                      <div className="relative">
+                        <Avatar className="w-14 h-14 border-2 border-border">
+                          <AvatarImage src={conversation.avatar_url || undefined} />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                            {conversation.username.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        {conversation.unreadCount && conversation.unreadCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                            {conversation.unreadCount}
+                          </Badge>
+                        )}
                       </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {conversation.email}
-                      </p>
-                      <p className="text-sm text-muted-foreground truncate mt-1">
-                        {conversation.lastMessage}
-                      </p>
-                    </div>
-                  </Link>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Chat</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this conversation with {conversation.username}? This will delete all messages. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <div className="flex gap-2">
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => handleRemoveChat(conversation.id)}
-                          className="bg-destructive hover:bg-destructive/90"
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-baseline justify-between gap-2 mb-1">
+                          <h3 className="font-semibold text-lg truncate">{conversation.username}</h3>
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {formatTime(conversation.lastMessageTime)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground/80 truncate mb-1">
+                          {conversation.lastMessage || 'No messages yet'}
+                        </p>
+                      </div>
+                    </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10 hover:text-destructive"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          Delete
-                        </AlertDialogAction>
-                      </div>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete your conversation with <span className="font-semibold">{conversation.username}</span> and all messages. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="flex gap-2 justify-end">
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleRemoveChat(conversation.id)}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </div>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               ))}
             </div>

@@ -645,7 +645,7 @@ const Tasks = () => {
               <SelectItem value="json">JSON</SelectItem>
             </SelectContent>
           </Select>
-          <Dialog open={open} onValueChange={setOpen}>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2" disabled={tasksLocked && !isAdmin} title={tasksLocked && !isAdmin ? 'Tasks are locked - only admins can create' : ''}>
                 <Plus className="h-4 w-4" />
@@ -827,8 +827,8 @@ const Tasks = () => {
                 {uploading ? 'Creating & Uploading...' : 'Create Task'}
               </Button>
             </form>
-          </DialogContent>
-        </Dialog>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Task Dialog */}
       <Dialog open={editOpen} onOpenChange={(open) => {

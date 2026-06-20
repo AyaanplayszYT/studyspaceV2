@@ -1,13 +1,19 @@
-
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/components/AuthProvider';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Send, LogOut, Trash2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, AlertCircle, Smile, Paperclip, MoreVertical, User } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -191,159 +197,211 @@ export default function DMChat() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto py-8 h-[calc(100vh-200px)] flex flex-col">
-      <Card className="flex-1 flex flex-col">
-        <CardHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+    <div className="container max-w-5xl mx-auto h-[calc(100vh-8rem)] flex flex-col p-4">
+      <Card className="flex-1 flex flex-col overflow-hidden shadow-lg">
+        {/* Header */}
+        <CardHeader className="border-b bg-card/50 backdrop-blur-sm px-4 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1 min-w-0">
               <Button 
                 variant="ghost" 
                 size="icon"
                 onClick={() => navigate('/dms')}
+                className="flex-shrink-0"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div>
+              
+              <Avatar className="w-11 h-11 border-2 border-border flex-shrink-0">
+                <AvatarImage src={friend?.avatar_url || undefined} />
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                  {friend?.username.charAt(0).toUpperCase() || '?'}
+                </AvatarFallback>
+              </Avatar>
+
+              <div className="flex-1 min-w-0">
                 <button
                   onClick={() => navigate(`/profile/${userId}`)}
-                  className="hover:underline cursor-pointer"
+                  className="hover:underline text-left w-full"
                 >
-                  <CardTitle className="hover:text-accent transition-colors">
-                    {friend ? friend.username : 'Direct Message'}
-                  </CardTitle>
+                  <h2 className="font-semibold text-lg truncate hover:text-primary transition-colors">
+                    {friend?.username || 'Loading...'}
+                  </h2>
                 </button>
                 {friend && (
-                  <p className="text-sm text-muted-foreground">{friend.email}</p>
+                  <p className="text-xs text-muted-foreground truncate">{friend.email}</p>
                 )}
               </div>
             </div>
-            <div className="flex gap-2">
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="icon" title="Remove Friend">
-                    <AlertCircle className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove Friend</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to remove {friend?.username} from your friends? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <div className="flex gap-2">
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleRemoveFriend} className="bg-destructive hover:bg-destructive/90">
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="flex-shrink-0">
+                  <MoreVertical className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate(`/profile/${userId}`)}>
+                  <User className="h-4 w-4 mr-2" />
+                  View Profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <AlertCircle className="h-4 w-4 mr-2" />
                       Remove Friend
-                    </AlertDialogAction>
-                  </div>
-                </AlertDialogContent>
-              </AlertDialog>
-              <Button 
-                onClick={signOut} 
-                variant="outline" 
-                size="icon"
-                title="Sign Out"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove Friend?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to remove <span className="font-semibold">{friend?.username}</span> from your friends? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="flex gap-2 justify-end">
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRemoveFriend} className="bg-destructive hover:bg-destructive/90">
+                        Remove Friend
+                      </AlertDialogAction>
+                    </div>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col min-h-[500px] flex-1">
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 py-4 min-h-0">
-            {messages.length === 0 ? (
-              <div className="flex justify-center items-center h-full text-muted-foreground">
-                <p>No messages yet. Say hi! 👋</p>
+
+        {/* Messages Area */}
+        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
+          {messages.length === 0 ? (
+            <div className="flex flex-col justify-center items-center h-full text-center">
+              <div className="bg-primary/10 rounded-full p-6 mb-4">
+                <Smile className="h-12 w-12 text-primary" />
               </div>
-            ) : (
-              messages.map((msg) => (
-                <div key={msg.id} className={`flex items-end gap-3 ${msg.from_user_id === user?.id ? 'flex-row-reverse' : 'flex-row'}`}>
-                  {/* Avatar for friend's messages */}
-                  {msg.from_user_id !== user?.id && friend && (
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={friend.avatar_url || undefined} />
-                      <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                        {friend.username.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  
-                  {/* Avatar for current user's messages */}
-                  {msg.from_user_id === user?.id && currentUser && (
-                    <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarImage src={currentUser.avatar_url || undefined} />
-                      <AvatarFallback className="bg-accent text-accent-foreground text-sm">
-                        {currentUser.username.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  
-                  {msg.from_user_id === user?.id && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-6 w-6 p-0 flex-shrink-0"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Message</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this message? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="flex gap-2">
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className="bg-destructive hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
+              <h3 className="text-lg font-semibold mb-2">No messages yet</h3>
+              <p className="text-muted-foreground mb-4">Start the conversation with {friend?.username}! 👋</p>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg, idx) => {
+                const isOwn = msg.from_user_id === user?.id;
+                const showAvatar = idx === 0 || messages[idx - 1].from_user_id !== msg.from_user_id;
+                const showTimestamp = idx === messages.length - 1 || messages[idx + 1].from_user_id !== msg.from_user_id;
+                
+                return (
+                  <div 
+                    key={msg.id} 
+                    className={`flex items-end gap-2 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}
+                  >
+                    {showAvatar ? (
+                      <Avatar className="w-8 h-8 flex-shrink-0 border border-border">
+                        <AvatarImage src={isOwn ? currentUser?.avatar_url || undefined : friend?.avatar_url || undefined} />
+                        <AvatarFallback className={isOwn ? 'bg-primary/10 text-primary' : 'bg-accent text-accent-foreground'}>
+                          {isOwn 
+                            ? currentUser?.username.charAt(0).toUpperCase() || 'Y'
+                            : friend?.username.charAt(0).toUpperCase() || 'F'
+                          }
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <div className="w-8" />
+                    )}
+                    
+                    <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                      <div className="group relative flex items-end gap-1">
+                        {isOwn && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This message will be permanently deleted. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <div className="flex gap-2 justify-end">
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteMessage(msg.id)} className="bg-destructive hover:bg-destructive/90">
+                                  Delete
+                                </AlertDialogAction>
+                              </div>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        <div className={`rounded-2xl px-4 py-2 shadow-sm ${
+                          isOwn 
+                            ? 'bg-primary text-primary-foreground rounded-br-sm' 
+                            : 'bg-card border border-border rounded-bl-sm'
+                        }`}>
+                          <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                         </div>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                  <div className={`max-w-[70%] rounded-lg p-3 ${msg.from_user_id === user?.id ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                    <p className="text-sm break-words whitespace-pre-wrap">{msg.content}</p>
-                    <p className={`text-xs opacity-70 mt-1`}>
-                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
+                      </div>
+                      {showTimestamp && (
+                        <span className={`text-xs text-muted-foreground mt-1 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {msg.read && isOwn && <span className="ml-1">· Read</span>}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-          <form onSubmit={handleSend} className="flex gap-2 mt-auto pt-4 border-t">
-            <textarea 
-              ref={textareaRef}
-              value={input} 
-              onChange={e => setInput(e.target.value)} 
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend(e as any);
-                }
-              }}
-              placeholder="Type a message... (Shift+Enter for new line)" 
-              className="flex-1 bg-background border border-input rounded-md px-3 py-2 text-sm resize-none max-h-24 focus:outline-none focus:ring-2 focus:ring-ring"
-              disabled={sending}
-              autoFocus
-              rows={3}
-            />
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </CardContent>
+
+        {/* Input Area */}
+        <div className="border-t bg-card/50 backdrop-blur-sm p-4">
+          <form onSubmit={handleSend} className="flex gap-2 items-end">
+            <div className="flex-1 relative">
+              <textarea 
+                ref={textareaRef}
+                value={input} 
+                onChange={e => setInput(e.target.value)} 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend(e as any);
+                  }
+                }}
+                placeholder="Type a message... (Shift+Enter for new line)" 
+                className="w-full bg-background border border-input rounded-2xl px-4 py-3 pr-12 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring transition-all max-h-32 min-h-[44px]"
+                disabled={sending}
+                autoFocus
+                rows={1}
+                style={{
+                  height: 'auto',
+                  minHeight: '44px',
+                  maxHeight: '128px'
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = Math.min(target.scrollHeight, 128) + 'px';
+                }}
+              />
+            </div>
             <Button 
               type="submit" 
               disabled={!input.trim() || sending}
               size="icon"
-              className="flex-shrink-0"
+              className="h-11 w-11 rounded-full flex-shrink-0 shadow-lg hover:shadow-xl transition-all"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </Button>
           </form>
-        </CardContent>
+        </div>
       </Card>
     </div>
   );
