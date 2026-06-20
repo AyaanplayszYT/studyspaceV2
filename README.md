@@ -67,7 +67,7 @@ VITE_OPENROUTER_KEY=your_openrouter_key
 ### 4. Setup OpenRouter
 
 1. Sign up at [openrouter.ai](https://openrouter.ai)
-2. Add $5-10 credits
+2. Add $5-10 credits(OPTIONAL)
 3. Create API key in Keys section
 4. Add to `.env` file
 
@@ -204,8 +204,7 @@ The schema creates:
 
 - Node.js 16+
 - Supabase account (free tier works)
-- OpenRouter account (add $5-10 credits)
-- Basic React/TypeScript knowledge
+- OpenRouter account (free tier works)
 
 ---
 
@@ -242,8 +241,8 @@ If you need help:
 1. Check this README
 2. Review code comments
 3. Check Supabase docs: [docs.supabase.com](https://docs.supabase.com)
-4. Contact via BuiltByBit
-5. Contact us on Disocord
+4. Contact via BuiltByBit https://builtbybit.com/members/astrix-studios.840455/
+5. Contact us on Disocord https://discord.gg/fvrZd5wYdG
 ---
 
 **Version:** 2.5.0  
